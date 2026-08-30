@@ -1,0 +1,2965 @@
+/* ==========================================================================
+   01. ZERO-SHADOW FLAT DESIGN TOKENS & GLOBAL RESET
+   ========================================================================== */
+:root {
+  --ifs-cinema-bg-base: #020306;
+  --ifs-cinema-bg-surface: #07090f;
+  --ifs-cinema-bg-elevated: #0e121b;
+  --ifs-cinema-bg-card: #090c14;
+  --ifs-cinema-bg-glass: rgba(7, 9, 15, 0.95);
+  --ifs-cinema-bg-overlay: rgba(2, 3, 6, 0.96);
+
+  --ifs-cinema-brand-amber: #ff9d00;
+  --ifs-cinema-brand-amber-light: #ffba3b;
+  --ifs-cinema-brand-amber-dark: #d97706;
+  --ifs-cinema-brand-amber-subtle: rgba(255, 157, 0, 0.1);
+
+  --ifs-cinema-brand-green: #10b981;
+  --ifs-cinema-brand-green-subtle: rgba(16, 185, 129, 0.12);
+
+  --ifs-cinema-seat-standard: #161e2e;
+  --ifs-cinema-seat-vip: #784805;
+  --ifs-cinema-seat-couple: #4c1d95;
+  --ifs-cinema-seat-selected: #ff9d00;
+  --ifs-cinema-seat-occupied: #0b0e14;
+
+  --ifs-cinema-text-main: #f8fafc;
+  --ifs-cinema-text-secondary: #94a3b8;
+  --ifs-cinema-text-muted: #64748b;
+
+  --ifs-cinema-border-subtle: #121724;
+  --ifs-cinema-border-light: #1e2638;
+  --ifs-cinema-border-amber: rgba(255, 157, 0, 0.45);
+
+  --ifs-cinema-font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ifs-cinema-font-mono: 'Space Grotesk', monospace;
+
+  --ifs-cinema-radius-sm: 8px;
+  --ifs-cinema-radius-md: 16px;
+  --ifs-cinema-radius-lg: 24px;
+  --ifs-cinema-radius-full: 9999px;
+
+  --ifs-cinema-transition: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --ifs-cinema-transition-normal: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --ifs-cinema-container-max: 1360px;
+}
+
+/* Global Absolute Zero-Shadow Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+  background-color: var(--ifs-cinema-bg-base);
+}
+
+body {
+  background-color: var(--ifs-cinema-bg-base);
+  color: var(--ifs-cinema-text-main);
+  font-family: var(--ifs-cinema-font-main);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  background-image: none;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--ifs-cinema-bg-base); }
+::-webkit-scrollbar-thumb { 
+  background: var(--ifs-cinema-border-light); 
+  border-radius: var(--ifs-cinema-radius-full);
+}
+::-webkit-scrollbar-thumb:hover { 
+  background: var(--ifs-cinema-brand-amber);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ifs-cinema-brand-amber);
+  outline-offset: 3px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--ifs-cinema-text-main);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+p { color: var(--ifs-cinema-text-secondary); }
+a { color: inherit; text-decoration: none; transition: 0.2s ease; }
+button, input, textarea, select { font-family: var(--ifs-cinema-font-main); outline: none; border: none; background: none; }
+img { max-width: 100%; height: auto; display: block; }
+
+.ifs-cinema-container {
+  width: 100%;
+  max-width: var(--ifs-cinema-container-max);
+  margin: 0 auto;
+  padding: 0 1.75rem;
+}
+
+.ifs-cinema-svg-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+/* Base Buttons & Badges */
+.ifs-cinema-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.8rem;
+  border-radius: var(--ifs-cinema-radius-sm);
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: var(--ifs-cinema-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.ifs-cinema-btn-amber {
+  background: var(--ifs-cinema-brand-amber);
+  color: #000;
+  border: 1px solid var(--ifs-cinema-brand-amber);
+}
+.ifs-cinema-btn-amber:hover {
+  background: var(--ifs-cinema-brand-amber-light);
+  border-color: var(--ifs-cinema-brand-amber-light);
+  transform: translateY(-2px);
+}
+
+.ifs-cinema-btn-secondary {
+  background: var(--ifs-cinema-bg-elevated);
+  color: var(--ifs-cinema-text-main);
+  border: 1px solid var(--ifs-cinema-border-light);
+}
+.ifs-cinema-btn-secondary:hover {
+  background: var(--ifs-cinema-border-light);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.ifs-cinema-btn-sm { 
+  padding: 9px 15px; 
+  font-size: 0.82rem; 
+}
+
+.ifs-cinema-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--ifs-cinema-radius-full);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.ifs-cinema-badge-amber { background: var(--ifs-cinema-brand-amber-subtle); color: var(--ifs-cinema-brand-amber); border: 1px solid var(--ifs-cinema-border-amber); }
+.ifs-cinema-badge-green { background: var(--ifs-cinema-brand-green-subtle); color: var(--ifs-cinema-brand-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+.ifs-cinema-badge-imax { background: rgba(0, 102, 255, 0.12); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); }
+.ifs-cinema-badge-dolby { background: rgba(229, 9, 20, 0.12); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+
+.ifs-cinema-section-padding {
+  padding: 6.5rem 0;
+  border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+  position: relative;
+}
+
+.ifs-cinema-section-title {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 110px;
+}
+.ifs-cinema-section-title h4 {
+  font-size: 40px;
+  margin: 20px 0;
+}
+
+/* ==========================================================================
+   02. TOPBAR & NAVBAR
+   ========================================================================== */
+.ifs-cinema-topbar {
+  background: #010204;
+  border-bottom: 1px solid rgba(255, 157, 0, 0.15);
+  font-size: 0.82rem;
+  color: var(--ifs-cinema-text-secondary);
+  padding: 20px 0;
+  width: 100%;
+  position: relative;
+  z-index: 1001;
+}
+
+.ifs-cinema-topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.ifs-cinema-topbar-info {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.ifs-cinema-topbar-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  transition: all 0.25s ease;
+  color: #fff;
+}
+.ifs-cinema-topbar-link:hover {
+  color: #fff;
+  transform: translateY(-1px);
+}
+.ifs-cinema-topbar-link .ifs-cinema-svg-icon {
+  color: var(--ifs-cinema-brand-amber);
+}
+
+.ifs-cinema-topbar-badge {
+  background: rgba(255, 157, 0, 0.08);
+  color: var(--ifs-cinema-brand-amber);
+  border: 1px solid var(--ifs-cinema-border-amber);
+  padding: 0.3rem 0.85rem;
+  border-radius: var(--ifs-cinema-radius-full);
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ifs-cinema-navbar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: #07090f;
+  border-bottom: 1px solid var(--ifs-cinema-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+
+.ifs-cinema-brand-logo {
+  display: block;
+  max-width: 70px;
+  background-color: #fff;
+  border-radius: 50%;
+  vertical-align: mathematical;
+  border: 1px solid #ddd;
+  text-decoration: none;
+}
+
+.ifs-cinema-logo-emblem {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1a140a 0%, #080603 100%);
+  border: 2px solid var(--ifs-cinema-brand-amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ifs-cinema-brand-logo:hover .ifs-cinema-logo-emblem {
+  transform: rotate(-10deg) scale(1.08);
+}
+
+.ifs-cinema-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+.ifs-cinema-title-top { 
+  font-size: 1.3rem; 
+  font-weight: 900; 
+  color: #ffffff; 
+  letter-spacing: 0.5px;
+}
+.ifs-cinema-title-bottom {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--ifs-cinema-brand-amber);
+  letter-spacing: 1px;
+}
+
+.ifs-cinema-nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 2.25rem;
+  list-style: none;
+}
+
+.ifs-cinema-nav-link {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ifs-cinema-text-secondary);
+  padding: 0.5rem 0;
+  position: relative;
+  transition: color 0.25s ease;
+}
+
+.ifs-cinema-nav-link:hover,
+.ifs-cinema-nav-link.ifs-cinema-active {
+  color: #fff;
+}
+
+.ifs-cinema-nav-link.ifs-cinema-active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--ifs-cinema-brand-amber);
+  border-radius: var(--ifs-cinema-radius-full);
+}
+
+.ifs-cinema-mobile-toggle {
+  display: none;
+  font-size: 1.75rem;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   03. HERO SPOTLIGHT & HEADERS
+   ========================================================================== */
+.ifs-cinema-hero-stage {
+  position: relative;
+  padding: 6.5rem 0 6rem;
+  background: var(--ifs-cinema-bg-base);
+  border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+}
+
+.ifs-cinema-hero-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: 4.5rem;
+  align-items: center;
+}
+
+.ifs-cinema-hero-top-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.ifs-cinema-live-pulse-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #6ee7b7;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--ifs-cinema-radius-full);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.ifs-cinema-pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+}
+
+.ifs-cinema-hero-title {
+  font-size: 4.2rem;
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -2px;
+  margin: 0.5rem 0 1.25rem;
+  color: #ffffff;
+}
+
+.ifs-cinema-hero-specs-hud,
+.ifs-cinema-specs-hud-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.ifs-cinema-hud-item {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--ifs-cinema-radius-sm);
+  font-size: 0.82rem;
+  font-family: var(--ifs-cinema-font-mono);
+  font-weight: 700;
+  color: var(--ifs-cinema-text-secondary);
+}
+.ifs-cinema-hud-item.highlight {
+  color: var(--ifs-cinema-brand-amber);
+  border-color: var(--ifs-cinema-border-amber);
+  background: var(--ifs-cinema-brand-amber-subtle);
+}
+
+.ifs-cinema-hero-lead-desc {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--ifs-cinema-text-secondary);
+  margin-bottom: 1.75rem;
+  max-width: 660px;
+}
+
+.ifs-cinema-hero-cta-stack {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.ifs-cinema-hero-specs-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.ifs-cinema-hero-spec-node .k {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--ifs-cinema-text-muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 0.2rem;
+}
+
+.ifs-cinema-hero-spec-node .v {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.ifs-cinema-hero-stats-deck {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  border-top: 1px dashed var(--ifs-cinema-border-light);
+  padding-top: 1.75rem;
+}
+
+.ifs-cinema-deck-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  border-radius: var(--ifs-cinema-radius-sm);
+  padding: 1.1rem 1.15rem;
+}
+
+.ifs-cinema-deck-val {
+  font-size: 1.45rem;
+  font-weight: 900;
+  color: var(--ifs-cinema-brand-amber);
+  font-family: var(--ifs-cinema-font-mono);
+  line-height: 1;
+}
+.ifs-cinema-deck-lbl {
+  font-size: 0.72rem;
+  color: var(--ifs-cinema-text-muted);
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-top: 0.35rem;
+}
+
+.ifs-cinema-poster-frame-hero {
+  position: relative;
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-amber);
+  border-radius: var(--ifs-cinema-radius-lg);
+  padding: 0.9rem;
+}
+.ifs-cinema-poster-frame-hero img {
+  border-radius: var(--ifs-cinema-radius-md);
+  width: 100%;
+  height: 540px;
+  object-fit: cover;
+}
+
+.ifs-cinema-floating-badge-top {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: #030508;
+  border: 1px solid var(--ifs-cinema-border-amber);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--ifs-cinema-radius-sm);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--ifs-cinema-brand-amber);
+  font-family: var(--ifs-cinema-font-mono);
+}
+
+.ifs-cinema-floating-badge-bottom {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  background: rgba(3, 5, 8, 0.96);
+  border: 1px solid var(--ifs-cinema-border-light);
+  padding: 0.85rem 1.15rem;
+  border-radius: var(--ifs-cinema-radius-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Specific Sub-Page Heroes */
+.ifs-cinema-about-hero,
+.ifs-cinema-gallery-hero,
+.ifs-cinema-contact-hero {
+  position: relative;
+  padding: 6.5rem 0 5.5rem;
+  background: var(--ifs-cinema-bg-base);
+  border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+  text-align: center;
+}
+
+.ifs-cinema-about-hero h1,
+.ifs-cinema-gallery-hero h1,
+.ifs-cinema-contact-hero h1 {
+  font-size: 50px;
+  font-weight: 900;
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+  color: #ffffff;
+}
+
+.ifs-cinema-about-hero p,
+.ifs-cinema-gallery-hero p,
+.ifs-cinema-contact-hero p {
+  max-width: 760px;
+  margin: 0 auto 2.5rem;
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: var(--ifs-cinema-text-secondary);
+}
+
+.ifs-cinema-single-movie-hero {
+  position: relative;
+  padding: 6rem 0 5rem;
+  background: var(--ifs-cinema-bg-base);
+  border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+}
+
+.ifs-cinema-movie-header-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+.ifs-cinema-poster-frame-3d {
+  position: relative;
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-amber);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 0.85rem;
+}
+.ifs-cinema-poster-frame-3d img {
+  border-radius: var(--ifs-cinema-radius-sm);
+  width: 100%;
+  height: 480px;
+  object-fit: cover;
+}
+
+.ifs-cinema-hero-main-title {
+  font-size: 3.6rem;
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+  margin-bottom: 1.25rem;
+  color: #ffffff;
+}
+
+.ifs-cinema-movie-credits-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin: 2rem 0;
+  padding: 1.5rem 0;
+  border-top: 1px dashed var(--ifs-cinema-border-light);
+  border-bottom: 1px dashed var(--ifs-cinema-border-light);
+}
+
+.ifs-cinema-credit-box .key {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--ifs-cinema-text-muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+.ifs-cinema-credit-box .val {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.ifs-cinema-details-layout {
+  padding: 5rem 0 3rem;
+}
+
+.ifs-cinema-content-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 2.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.ifs-cinema-card-heading {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ifs-cinema-cast-deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.ifs-cinema-actor-card { text-align: center; }
+.ifs-cinema-actor-photo {
+  width: 85px;
+  height: 85px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 0.75rem;
+  border: 2px solid var(--ifs-cinema-border-amber);
+}
+.ifs-cinema-actor-name { font-weight: 800; font-size: 0.9rem; color: #fff; }
+.ifs-cinema-actor-role { font-size: 0.78rem; color: var(--ifs-cinema-text-muted); }
+
+.ifs-cinema-trailer-embed-card {
+  position: relative;
+  width: 100%;
+  height: 360px;
+  border-radius: var(--ifs-cinema-radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--ifs-cinema-border-amber);
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.ifs-cinema-play-button-pulse {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: var(--ifs-cinema-brand-amber);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+.ifs-cinema-trailer-embed-card:hover .ifs-cinema-play-button-pulse {
+  transform: scale(1.12);
+}
+
+/* ==========================================================================
+   04. NOW SHOWING (3-BOX VECTOR PRESENTATION)
+   ========================================================================== */
+.ifs-cinema-movie-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.25rem;
+}
+
+.ifs-cinema-card {
+  width: 100%;
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  border-radius: var(--ifs-cinema-radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: var(--ifs-cinema-transition);
+}
+
+.ifs-cinema-card:hover, .ifs-cinema-card:focus-within {
+  border-color: var(--ifs-cinema-brand-amber);
+  transform: translateY(-8px);
+}
+
+.ifs-cinema-poster-wrap {
+  position: relative;
+  width: 100%;
+  height: 480px;
+  background: #000;
+  overflow: hidden;
+}
+
+.ifs-cinema-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ifs-cinema-card:hover .ifs-cinema-poster-img { transform: scale(1.08); }
+
+.ifs-cinema-card-tag { position: absolute; top: 16px; left: 16px; z-index: 4; }
+.ifs-cinema-card-rating {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #030508;
+  border: 1px solid var(--ifs-cinema-border-amber);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--ifs-cinema-radius-sm);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--ifs-cinema-brand-amber);
+  z-index: 4;
+}
+
+.ifs-cinema-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 3, 6, 0.94);
+  padding: 2.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 5;
+}
+.ifs-cinema-card:hover .ifs-cinema-card-overlay,
+.ifs-cinema-card:focus-within .ifs-cinema-card-overlay { opacity: 1; visibility: visible; }
+
+.ifs-cinema-meta-row {
+  font-size: 0.88rem;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.ifs-cinema-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--ifs-cinema-brand-amber);
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ifs-cinema-circle-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--ifs-cinema-brand-amber);
+  color: #000;
+}
+
+.ifs-cinema-card-footer {
+  padding: 1.5rem 1.75rem;
+  background: var(--ifs-cinema-bg-surface);
+  border-top: 1px solid var(--ifs-cinema-border-subtle);
+}
+.ifs-cinema-card-title { font-size: 1.2rem; font-weight: 900; margin-bottom: 0.4rem; }
+
+/* ==========================================================================
+   05. LUXURY SCREENING SCHEDULE
+   ========================================================================== */
+.ifs-cinema-schedule-deck-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ifs-cinema-schedule-feature-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 1.75rem 2rem;
+  display: grid;
+  grid-template-columns: 80px 1.2fr 1fr auto;
+  gap: 2rem;
+  align-items: center;
+  transition: var(--ifs-cinema-transition);
+}
+
+.ifs-cinema-schedule-feature-card:hover {
+  border-color: var(--ifs-cinema-border-amber);
+  transform: translateY(-3px);
+}
+
+.ifs-cinema-schedule-thumb {
+  width: 80px;
+  height: 105px;
+  border-radius: var(--ifs-cinema-radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--ifs-cinema-border-amber);
+}
+
+.ifs-cinema-time-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-light);
+  color: #fff;
+  font-family: var(--ifs-cinema-font-mono);
+  font-weight: 800;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.15rem;
+  border-radius: var(--ifs-cinema-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.ifs-cinema-time-pill-btn:hover {
+  background: var(--ifs-cinema-brand-amber);
+  border-color: var(--ifs-cinema-brand-amber);
+  color: #000;
+}
+
+/* ==========================================================================
+   06. UPCOMING BLOCKBUSTERS
+   ========================================================================== */
+.ifs-cinema-upcoming-grid-refined {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.25rem;
+}
+
+.ifs-cinema-upcoming-card-pro {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  border-radius: var(--ifs-cinema-radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: var(--ifs-cinema-transition);
+}
+
+.ifs-cinema-upcoming-card-pro:hover {
+  transform: translateY(-8px);
+  border-color: var(--ifs-cinema-brand-amber);
+}
+
+.ifs-cinema-upcoming-poster-box {
+  position: relative;
+  height: 420px;
+  overflow: hidden;
+  background: #000;
+}
+
+.ifs-cinema-upcoming-poster-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+.ifs-cinema-upcoming-card-pro:hover .ifs-cinema-upcoming-poster-box img {
+  transform: scale(1.08);
+}
+
+.ifs-cinema-upcoming-date-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: #030508;
+  border: 1px solid var(--ifs-cinema-border-amber);
+  color: var(--ifs-cinema-brand-amber);
+  font-family: var(--ifs-cinema-font-mono);
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--ifs-cinema-radius-sm);
+}
+
+.ifs-cinema-upcoming-details-box {
+  padding: 1.75rem 2rem;
+  background: var(--ifs-cinema-bg-surface);
+  border-top: 1px solid var(--ifs-cinema-border-subtle);
+}
+
+/* ==========================================================================
+   07. GOURMET CONCESSIONS & COMBOS
+   ========================================================================== */
+.ifs-cinema-combo-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 2.25rem 2rem;
+  text-align: center;
+  transition: var(--ifs-cinema-transition);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.ifs-cinema-combo-card:hover {
+  border-color: var(--ifs-cinema-brand-amber);
+  transform: translateY(-6px);
+}
+.ifs-cinema-combo-icon-wrap {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--ifs-cinema-brand-amber-subtle);
+  border: 1px solid var(--ifs-cinema-border-amber);
+  color: var(--ifs-cinema-brand-amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.35rem;
+  font-size: 1.5rem;
+}
+
+/* ==========================================================================
+   08. CINEMATIC EXPERIENCE & TECH
+   ========================================================================== */
+.ifs-cinema-exp-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 5rem;
+  align-items: center;
+}
+
+.ifs-cinema-stat-counter-deck {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+
+.ifs-cinema-stat-box-luxury {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  padding: 2rem 1.25rem;
+  border-radius: var(--ifs-cinema-radius-md);
+  text-align: center;
+}
+
+.ifs-cinema-tech-card-luxury {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  padding: 2rem;
+  border-radius: var(--ifs-cinema-radius-md);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.ifs-cinema-tech-icon-glow {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #110d06;
+  border: 1.5px solid var(--ifs-cinema-brand-amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--ifs-cinema-brand-amber);
+  font-size: 1.4rem;
+}
+.ifs-cinema-tech-icon-glow.blue { background: #06101e; border-color: #60a5fa; color: #60a5fa; }
+
+/* ==========================================================================
+   09. PRICING TIERS
+   ========================================================================== */
+.ifs-cinema-pricing-card-luxury {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 3.5rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+.ifs-cinema-pricing-card-luxury.featured {
+  border: 2px solid var(--ifs-cinema-brand-amber);
+  transform: scale(1.03);
+}
+
+.ifs-cinema-price-tag {
+  font-size: 3.4rem;
+  font-weight: 900;
+  color: #fff;
+  font-family: var(--ifs-cinema-font-mono);
+  margin: 1.5rem 0 2.25rem;
+  line-height: 1;
+}
+.ifs-cinema-price-tag.amber { color: var(--ifs-cinema-brand-amber); }
+
+.ifs-cinema-feature-checklist {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 3.5rem;
+  font-size: 0.95rem;
+}
+.ifs-cinema-feature-checklist li { display: flex; align-items: center; gap: 0.9rem; }
+.ifs-cinema-check-bullet {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ifs-cinema-brand-amber-subtle);
+  border: 1px solid var(--ifs-cinema-border-amber);
+  color: var(--ifs-cinema-brand-amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+/* ==========================================================================
+   10. FAQ ACCORDION
+   ========================================================================== */
+.ifs-cinema-faq-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 920px;
+  margin: 0 auto;
+}
+.ifs-cinema-faq-item {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 1.5rem 1.75rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+.ifs-cinema-faq-item:hover { border-color: var(--ifs-cinema-brand-amber); }
+.ifs-cinema-faq-item summary {
+  font-weight: 800;
+  color: #fff;
+  font-size: 1.1rem;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.ifs-cinema-faq-item summary::-webkit-details-marker { display: none; }
+.ifs-cinema-faq-item summary::after {
+  content: '+';
+  color: var(--ifs-cinema-brand-amber);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+.ifs-cinema-faq-item[open] summary::after { content: '−'; }
+.ifs-cinema-faq-answer {
+  margin-top: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  color: var(--ifs-cinema-text-secondary);
+  border-top: 1px solid var(--ifs-cinema-border-subtle);
+  padding-top: 1rem;
+}
+
+/* ==========================================================================
+   11. CINEMA GALLERY & MASONRY
+   ========================================================================== */
+.ifs-cinema-gallery-masonry-refined {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.75rem;
+}
+
+.ifs-cinema-gallery-card-pro {
+  position: relative;
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  border-radius: var(--ifs-cinema-radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  height: 310px;
+  transition: var(--ifs-cinema-transition);
+}
+.ifs-cinema-gallery-card-pro.span-2 { grid-column: span 2; }
+
+.ifs-cinema-gallery-card-pro img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ifs-cinema-gallery-card-pro:hover {
+  border-color: var(--ifs-cinema-brand-amber);
+  transform: translateY(-6px);
+}
+.ifs-cinema-gallery-card-pro:hover img {
+  transform: scale(1.08);
+}
+
+.ifs-cinema-gallery-badge-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(2, 3, 6, 0.95) 100%);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.ifs-cinema-gallery-badge-overlay .cat {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--ifs-cinema-brand-amber);
+  letter-spacing: 1px;
+  margin-bottom: 0.25rem;
+}
+.ifs-cinema-gallery-badge-overlay .title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.ifs-cinema-filter-pills {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ifs-cinema-filter-btn {
+  padding: 0.6rem 1.4rem;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-full);
+  color: var(--ifs-cinema-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ifs-cinema-filter-btn:hover,
+.ifs-cinema-filter-btn.active {
+  background: var(--ifs-cinema-brand-amber-subtle);
+  border-color: var(--ifs-cinema-brand-amber);
+  color: var(--ifs-cinema-brand-amber);
+}
+
+.ifs-cinema-gallery-masonry {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.ifs-cinema-gallery-card {
+  position: relative;
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  border-radius: var(--ifs-cinema-radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  transition: var(--ifs-cinema-transition-normal);
+  height: 380px;
+}
+.ifs-cinema-gallery-card:hover {
+  border-color: var(--ifs-cinema-brand-amber);
+  transform: translateY(-8px);
+}
+
+.ifs-cinema-gallery-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ifs-cinema-gallery-card:hover .ifs-cinema-gallery-img {
+  transform: scale(1.08);
+}
+
+.ifs-cinema-gallery-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(2, 3, 6, 0.95) 100%);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  transition: opacity 0.3s ease;
+}
+
+.ifs-cinema-gallery-category {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--ifs-cinema-brand-amber);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.35rem;
+}
+
+.ifs-cinema-gallery-title {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+/* Lightbox Modal */
+.ifs-cinema-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--ifs-cinema-bg-overlay);
+  z-index: 3000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.ifs-cinema-lightbox-overlay.active { display: flex; }
+
+.ifs-cinema-lightbox-wrap {
+  max-width: 1000px;
+  width: 100%;
+  position: relative;
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-amber);
+  border-radius: var(--ifs-cinema-radius-md);
+  overflow: hidden;
+}
+
+.ifs-cinema-lightbox-wrap img {
+  width: 100%;
+  max-height: 600px;
+  object-fit: contain;
+  background: #000;
+}
+
+.ifs-cinema-lightbox-caption {
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--ifs-cinema-border-subtle);
+}
+
+.ifs-cinema-lightbox-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+}
+.ifs-cinema-lightbox-close:hover {
+  border-color: var(--ifs-cinema-brand-amber);
+  color: var(--ifs-cinema-brand-amber);
+}
+
+/* ==========================================================================
+   12. SEAT MATRIX & RESERVATIONS
+   ========================================================================== */
+.ifs-cinema-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--ifs-cinema-bg-overlay);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+.ifs-cinema-modal-overlay.ifs-cinema-active,
+.ifs-cinema-modal-overlay.active { display: flex; }
+
+.ifs-cinema-booking-panel {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-lg);
+  width: 100%;
+  max-width: 1100px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: 92vh;
+  overflow: hidden;
+}
+.ifs-cinema-modal-close {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  color: var(--ifs-cinema-text-secondary);
+  width: 42px;
+  height: 42px;
+  border-radius: var(--ifs-cinema-radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+}
+.ifs-cinema-modal-header {
+  padding: 1.75rem 2.25rem;
+  border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+  background: var(--ifs-cinema-bg-card);
+}
+.ifs-cinema-modal-body {
+  padding: 2.25rem;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 3rem;
+}
+
+.ifs-cinema-inline-seat-section {
+  padding: 0 0 6.5rem;
+}
+
+.ifs-cinema-stage-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-lg);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+}
+
+.ifs-cinema-seating-arena {
+  padding: 3.5rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-right: 1px solid var(--ifs-cinema-border-subtle);
+  background: var(--ifs-cinema-bg-surface);
+}
+
+.ifs-cinema-screen-zone {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 3.5rem;
+}
+.ifs-cinema-screen-curve {
+  width: 75%;
+  height: 10px;
+  background: var(--ifs-cinema-brand-amber);
+  border-radius: 50% 50% 0 0;
+  margin-bottom: 0.85rem;
+}
+.ifs-cinema-screen-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--ifs-cinema-text-muted);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.ifs-cinema-seat-scroll-container,
+.ifs-cinema-seat-scroll {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.ifs-cinema-seating-matrix {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  align-items: center;
+  user-select: none;
+  min-width: 500px;
+}
+.ifs-cinema-seat-row {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  justify-content: center;
+}
+.ifs-cinema-row-label {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: var(--ifs-cinema-text-muted);
+  width: 28px;
+  text-align: center;
+  font-family: var(--ifs-cinema-font-mono);
+}
+.ifs-cinema-seat-node {
+  width: 42px;
+  height: 38px;
+  border-radius: 8px 8px 3px 3px;
+  background: var(--ifs-cinema-seat-standard);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  position: relative;
+  transition: var(--ifs-cinema-transition);
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.ifs-cinema-seat-node:hover:not(.ifs-cinema-occupied):not(.occupied),
+.ifs-cinema-seat-node:focus-visible:not(.ifs-cinema-occupied):not(.occupied) {
+  transform: scale(1.15);
+  background: var(--ifs-cinema-border-light);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.ifs-cinema-seat-node:hover:not(.ifs-cinema-occupied):not(.occupied) .ifs-cinema-seat-number {
+  color: #fff;
+}
+
+.ifs-cinema-seat-node.vip {
+  background: var(--ifs-cinema-seat-vip);
+  border-color: rgba(255, 157, 0, 0.5);
+}
+.ifs-cinema-seat-node.vip .ifs-cinema-seat-number {
+  color: #ffdda1;
+}
+
+.ifs-cinema-seat-node.couple {
+  width: 90px;
+  background: var(--ifs-cinema-seat-couple);
+  border-color: rgba(167, 139, 250, 0.5);
+}
+.ifs-cinema-seat-node.couple .ifs-cinema-seat-number {
+  color: #e9d5ff;
+  font-size: 0.75rem;
+}
+
+.ifs-cinema-seat-node.selected {
+  background: var(--ifs-cinema-seat-selected) !important;
+  border-color: #fff !important;
+  transform: scale(1.08);
+}
+.ifs-cinema-seat-node.selected .ifs-cinema-seat-number {
+  color: #000 !important;
+  font-weight: 900;
+}
+
+.ifs-cinema-seat-node.ifs-cinema-occupied,
+.ifs-cinema-seat-node.occupied {
+  background: var(--ifs-cinema-seat-occupied) !important;
+  border-color: transparent !important;
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+.ifs-cinema-seat-node.ifs-cinema-occupied .ifs-cinema-seat-number,
+.ifs-cinema-seat-node.occupied .ifs-cinema-seat-number {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.ifs-cinema-seat-node.aisle { margin-right: 2rem; }
+
+.ifs-cinema-seat-number {
+  font-family: var(--ifs-cinema-font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ifs-cinema-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.75rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--ifs-cinema-border-subtle);
+  width: 100%;
+  flex-wrap: wrap;
+}
+.ifs-cinema-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  color: var(--ifs-cinema-text-secondary);
+  font-weight: 600;
+}
+.ifs-cinema-legend-bullet,
+.ifs-cinema-bullet { 
+  width: 15px; 
+  height: 15px; 
+  border-radius: 4px; 
+}
+
+.ifs-cinema-summary-sidebar,
+.ifs-cinema-checkout-sidebar {
+  background: var(--ifs-cinema-bg-card);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 2.75rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ifs-cinema-movie-meta-summary h3 {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.25;
+  margin-bottom: 0.4rem;
+}
+
+.ifs-cinema-hall-tag {
+  font-size: 0.82rem;
+  color: var(--ifs-cinema-brand-amber);
+  font-family: var(--ifs-cinema-font-mono);
+  font-weight: 700;
+  margin-bottom: 1.75rem;
+  display: inline-block;
+}
+
+.ifs-cinema-chip-wrap,
+.ifs-cinema-chips-wrapper,
+.ifs-cinema-selected-seats-badge-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 48px;
+  margin-bottom: 2rem;
+  padding: 0.75rem;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px dashed var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-sm);
+  align-items: center;
+}
+
+.ifs-cinema-seat-chip {
+  background: #110d06;
+  border: 1px solid var(--ifs-cinema-border-amber);
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-family: var(--ifs-cinema-font-mono);
+  font-weight: 800;
+  color: var(--ifs-cinema-brand-amber);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ifs-cinema-bill-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-bottom: 2rem;
+  border-top: 1px solid var(--ifs-cinema-border-subtle);
+  padding-top: 1.5rem;
+}
+.ifs-cinema-bill-item { 
+  display: flex; 
+  justify-content: space-between; 
+  font-size: 0.9rem; 
+  color: var(--ifs-cinema-text-secondary); 
+}
+.ifs-cinema-bill-item.total {
+  border-top: 1px dashed var(--ifs-cinema-border-light);
+  padding-top: 1rem;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.ifs-cinema-payment-methods {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.ifs-cinema-pay-btn {
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-light);
+  padding: 0.55rem;
+  border-radius: var(--ifs-cinema-radius-sm);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ifs-cinema-pay-btn.selected {
+  border-color: var(--ifs-cinema-brand-amber);
+  background: var(--ifs-cinema-brand-amber-subtle);
+  color: var(--ifs-cinema-brand-amber);
+}
+
+.ifs-cinema-ticket-card {
+  background: #0f131c;
+  color: #fff;
+  border: 1px solid var(--ifs-cinema-border-amber);
+  border-radius: var(--ifs-cinema-radius-md);
+  overflow: hidden;
+  width: 100%;
+  max-width: 440px;
+  position: relative;
+}
+.ifs-cinema-ticket-header {
+  background: var(--ifs-cinema-brand-amber);
+  color: #000;
+  padding: 1.75rem;
+  text-align: center;
+}
+.ifs-cinema-ticket-body { padding: 2rem; }
+.ifs-cinema-ticket-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+.ifs-cinema-ticket-qr {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-subtle);
+  padding: 1.25rem;
+  border-radius: var(--ifs-cinema-radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+.ifs-cinema-mock-qr {
+  width: 130px;
+  height: 130px;
+  background: repeating-conic-gradient(#fff 0% 25%, #000 0% 50%) 50% / 13px 13px;
+  border: 3px solid var(--ifs-cinema-brand-amber);
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   13. DASHBOARD & ACCOUNT WORKSPACE
+   ========================================================================== */
+.ifs-cinema-dashboard-header {
+  padding: 4.5rem 0 3rem;
+  border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+  position: relative;
+}
+
+.ifs-cinema-user-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.ifs-cinema-user-meta {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.ifs-cinema-user-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 2px solid var(--ifs-cinema-brand-amber);
+  object-fit: cover;
+}
+
+.ifs-cinema-user-title h1 {
+  font-size: 2.2rem;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.ifs-cinema-kpi-deck {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+
+.ifs-cinema-kpi-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 1.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.ifs-cinema-kpi-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--ifs-cinema-brand-amber-subtle);
+  border: 1px solid var(--ifs-cinema-border-amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  color: var(--ifs-cinema-brand-amber);
+  flex-shrink: 0;
+}
+
+.ifs-cinema-kpi-val {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: #fff;
+  font-family: var(--ifs-cinema-font-mono);
+  line-height: 1;
+}
+.ifs-cinema-kpi-lbl {
+  font-size: 0.78rem;
+  color: var(--ifs-cinema-text-muted);
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-top: 0.35rem;
+}
+
+.ifs-cinema-workspace-section {
+  padding: 4rem 0 6.5rem;
+}
+
+.ifs-cinema-workspace-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 3.5rem;
+  align-items: start;
+}
+
+.ifs-cinema-account-sidebar {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: sticky;
+  top: 110px;
+}
+
+.ifs-cinema-tab-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1.15rem;
+  border-radius: var(--ifs-cinema-radius-sm);
+  color: var(--ifs-cinema-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+.ifs-cinema-tab-nav-btn:hover {
+  background: var(--ifs-cinema-bg-elevated);
+  color: #fff;
+}
+.ifs-cinema-tab-nav-btn.active {
+  background: var(--ifs-cinema-brand-amber);
+  color: #000;
+}
+
+.ifs-cinema-tab-pane {
+  display: none;
+  animation: ifsFadeIn 0.25s ease-in-out;
+}
+.ifs-cinema-tab-pane.active { display: block; }
+
+@keyframes ifsFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ifs-cinema-pass-ticket-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  margin-bottom: 2rem;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  transition: var(--ifs-cinema-transition-normal);
+}
+.ifs-cinema-pass-ticket-card:hover {
+  border-color: var(--ifs-cinema-border-amber);
+}
+
+.ifs-cinema-pass-left-content {
+  padding: 2.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ifs-cinema-pass-right-qr {
+  background: var(--ifs-cinema-bg-card);
+  border-left: 2px dashed var(--ifs-cinema-border-light);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.ifs-cinema-qr-mock-small {
+  width: 120px;
+  height: 120px;
+  background: repeating-conic-gradient(#fff 0% 25%, #000 0% 50%) 50% / 12px 12px;
+  border: 3px solid var(--ifs-cinema-brand-amber);
+  margin-bottom: 0.75rem;
+}
+
+.ifs-cinema-profile-form-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 2.5rem;
+}
+
+.ifs-cinema-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.ifs-cinema-input-group {
+  margin-bottom: 1.25rem;
+}
+
+.ifs-cinema-input-group label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--ifs-cinema-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.45rem;
+}
+
+.ifs-cinema-input-field {
+  width: 100%;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-sm);
+  padding: 0.85rem 1.15rem;
+  color: #fff;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+}
+.ifs-cinema-input-field:focus { border-color: var(--ifs-cinema-brand-amber); }
+
+.ifs-cinema-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.ifs-cinema-history-table th {
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid var(--ifs-cinema-border-light);
+  color: var(--ifs-cinema-text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: var(--ifs-cinema-bg-elevated);
+}
+.ifs-cinema-history-table td {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+}
+
+/* ==========================================================================
+   14. ARCHITECTURE & METRICS (ABOUT US)
+   ========================================================================== */
+.ifs-cinema-split-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 5rem;
+  align-items: center;
+}
+
+.ifs-cinema-frame-wrap {
+  position: relative;
+  border-radius: var(--ifs-cinema-radius-md);
+  overflow: hidden;
+  border: 1px solid var(--ifs-cinema-border-amber);
+}
+.ifs-cinema-frame-wrap img {
+  width: 100%;
+  height: 440px;
+  object-fit: cover;
+}
+
+.ifs-cinema-pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-top: 3.5rem;
+}
+
+.ifs-cinema-pillar-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 2.5rem 2rem;
+  transition: var(--ifs-cinema-transition-normal);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.ifs-cinema-pillar-card:hover {
+  border-color: var(--ifs-cinema-border-amber);
+  transform: translateY(-8px);
+}
+
+.ifs-cinema-pillar-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--ifs-cinema-brand-amber-subtle);
+  border: 1px solid var(--ifs-cinema-border-amber);
+  color: var(--ifs-cinema-brand-amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.ifs-cinema-metrics-banner {
+  background: var(--ifs-cinema-bg-surface);
+  border-top: 1px solid var(--ifs-cinema-border-subtle);
+  border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+  padding: 4.5rem 0;
+}
+
+.ifs-cinema-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  text-align: center;
+}
+
+.ifs-cinema-metric-number {
+  font-size: 3.2rem;
+  font-weight: 900;
+  color: var(--ifs-cinema-brand-amber);
+  font-family: var(--ifs-cinema-font-mono);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.ifs-cinema-metric-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--ifs-cinema-text-muted);
+  letter-spacing: 1px;
+}
+
+/* ==========================================================================
+   15. CHECKOUT LAYOUT & FLOW
+   ========================================================================== */
+.ifs-cinema-checkout-hero {
+  position: relative;
+  padding: 4.5rem 0 3rem;
+  background: var(--ifs-cinema-bg-base);
+  border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+  text-align: center;
+}
+
+.ifs-cinema-checkout-hero h1 {
+  font-size: 3.2rem;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+}
+
+.ifs-cinema-checkout-steps {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.ifs-cinema-step-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ifs-cinema-text-muted);
+}
+.ifs-cinema-step-item.active { color: var(--ifs-cinema-brand-amber); }
+.ifs-cinema-step-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-light);
+  font-family: var(--ifs-cinema-font-mono);
+  font-size: 0.8rem;
+}
+.ifs-cinema-step-item.active .ifs-cinema-step-num {
+  background: var(--ifs-cinema-brand-amber);
+  color: #000;
+  border-color: var(--ifs-cinema-brand-amber);
+  font-weight: 900;
+}
+
+.ifs-cinema-checkout-layout {
+  padding: 4.5rem 0 6.5rem;
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+.ifs-cinema-panel-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 2.25rem 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.ifs-cinema-panel-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+  padding-bottom: 0.85rem;
+}
+
+.ifs-cinema-form-group {
+  margin-bottom: 1.25rem;
+}
+
+.ifs-cinema-form-group label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--ifs-cinema-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 20px;
+}
+
+.ifs-cinema-input {
+  width: 100%;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-sm);
+  padding: 0.85rem 1.15rem;
+  color: #fff;
+  font-size: 0.92rem;
+  transition: border-color 0.2s ease;
+}
+.ifs-cinema-input:focus { border-color: var(--ifs-cinema-brand-amber); }
+
+.ifs-cinema-payment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ifs-cinema-payment-tile {
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-sm);
+  padding: 1.25rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--ifs-cinema-transition-normal);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ifs-cinema-payment-tile:hover {
+  border-color: var(--ifs-cinema-border-amber);
+  transform: translateY(-2px);
+}
+.ifs-cinema-payment-tile.active {
+  border-color: var(--ifs-cinema-brand-amber);
+  background: var(--ifs-cinema-brand-amber-subtle);
+}
+.ifs-cinema-payment-tile .icon-wrap { font-size: 1.5rem; }
+.ifs-cinema-payment-tile .name {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: #fff;
+}
+
+.ifs-cinema-payment-fields {
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px dashed var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-sm);
+  padding: 1.5rem;
+}
+
+.ifs-cinema-order-summary-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 2.25rem 2rem;
+  position: sticky;
+  top: 110px;
+}
+
+.ifs-cinema-summary-movie-head {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+}
+.ifs-cinema-summary-movie-head img {
+  width: 75px;
+  height: 105px;
+  object-fit: cover;
+  border-radius: var(--ifs-cinema-radius-sm);
+  border: 1px solid var(--ifs-cinema-border-amber);
+}
+
+/* ==========================================================================
+   16. CONFIRMED PASS / SUCCESS PAGE
+   ========================================================================== */
+.ifs-cinema-thanks-hero {
+  position: relative;
+  padding: 5.5rem 0 3.5rem;
+  text-align: center;
+  background: var(--ifs-cinema-bg-base);
+  border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+}
+
+.ifs-cinema-success-badge-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.12);
+  border: 2px solid var(--ifs-cinema-brand-green);
+  color: var(--ifs-cinema-brand-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  font-size: 2.25rem;
+}
+
+.ifs-cinema-thanks-hero h1 {
+  font-size: 3.2rem;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  margin-bottom: 0.6rem;
+  color: #ffffff;
+}
+
+.ifs-cinema-thanks-hero p {
+  font-size: 1.15rem;
+  color: var(--ifs-cinema-text-secondary);
+  max-width: 620px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.ifs-cinema-pass-section {
+  padding: 4.5rem 0 6.5rem;
+}
+
+.ifs-cinema-pass-center-wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.ifs-cinema-pass-main-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-amber);
+  border-radius: var(--ifs-cinema-radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.ifs-cinema-pass-top-band {
+  background: var(--ifs-cinema-brand-amber);
+  color: #000;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ifs-cinema-pass-top-band h3 {
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  line-height: 1.1;
+  color: #000;
+}
+.ifs-cinema-pass-top-band span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.ifs-cinema-pass-body { padding: 2.25rem 2rem; }
+
+.ifs-cinema-movie-lead-row {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px dashed var(--ifs-cinema-border-light);
+}
+
+.ifs-cinema-movie-lead-row img {
+  width: 90px;
+  height: 125px;
+  object-fit: cover;
+  border-radius: var(--ifs-cinema-radius-sm);
+  border: 1px solid var(--ifs-cinema-border-amber);
+}
+
+.ifs-cinema-pass-grid-specs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.ifs-cinema-pass-spec-item .label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--ifs-cinema-text-muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 0.35rem;
+}
+
+.ifs-cinema-pass-spec-item .value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+}
+.ifs-cinema-pass-spec-item .value.amber {
+  color: var(--ifs-cinema-brand-amber);
+  font-family: var(--ifs-cinema-font-mono);
+}
+
+.ifs-cinema-concessions-included-banner {
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: var(--ifs-cinema-radius-sm);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.ifs-cinema-concession-icon { font-size: 1.5rem; }
+
+.ifs-cinema-pass-footer-perforated {
+  border-top: 2px dashed var(--ifs-cinema-border-light);
+  padding: 1.75rem 2rem;
+  background: var(--ifs-cinema-bg-card);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ifs-cinema-qr-side-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.ifs-cinema-qr-box {
+  background: #fff;
+  padding: 1rem;
+  border-radius: var(--ifs-cinema-radius-sm);
+  display: inline-block;
+  margin-bottom: 1.25rem;
+}
+
+.ifs-cinema-qr-mock-matrix {
+  width: 160px;
+  height: 160px;
+  background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 16px 16px;
+}
+
+.ifs-cinema-token-tag {
+  font-size: 0.95rem;
+  font-family: var(--ifs-cinema-font-mono);
+  font-weight: 800;
+  color: var(--ifs-cinema-brand-amber);
+  margin-bottom: 0.5rem;
+}
+
+.ifs-cinema-actions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* ==========================================================================
+   17. AUTH WORKSPACE & SPLIT CARD
+   ========================================================================== */
+.ifs-cinema-auth-section {
+  padding: 5.5rem 0 7rem;
+  position: relative;
+}
+
+.ifs-cinema-auth-stage {
+  max-width: 1060px;
+  margin: 0 auto;
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-lg);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.ifs-cinema-auth-showcase {
+  position: relative;
+  background: linear-gradient(180deg, rgba(2, 3, 6, 0.4) 0%, rgba(2, 3, 6, 0.95) 100%),
+              url('https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=900&auto=format&fit=crop&q=80') center/cover no-repeat;
+  padding: 3.5rem 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid var(--ifs-cinema-border-subtle);
+}
+
+.ifs-cinema-perks-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+.ifs-cinema-perk-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-size: 0.92rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.ifs-cinema-perk-bullet {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ifs-cinema-brand-amber-subtle);
+  border: 1px solid var(--ifs-cinema-border-amber);
+  color: var(--ifs-cinema-brand-amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.ifs-cinema-auth-workspace {
+  padding: 3.5rem 3rem;
+  background: var(--ifs-cinema-bg-card);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ifs-cinema-tab-switcher {
+  display: flex;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-sm);
+  padding: 0.35rem;
+  margin-bottom: 2.25rem;
+}
+
+.ifs-cinema-tab-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--ifs-cinema-text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.ifs-cinema-tab-btn.active {
+  background: var(--ifs-cinema-brand-amber);
+  color: #000;
+}
+
+.ifs-cinema-form-panel {
+  display: none;
+  animation: ifsFadeIn 0.3s ease-in-out;
+}
+.ifs-cinema-form-panel.active { display: block; }
+
+.ifs-cinema-meta-links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  margin-bottom: 1.75rem;
+  color: var(--ifs-cinema-text-secondary);
+}
+.ifs-cinema-meta-links a { color: var(--ifs-cinema-brand-amber); font-weight: 700; }
+.ifs-cinema-meta-links a:hover { text-decoration: underline; }
+
+.ifs-cinema-social-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.75rem 0;
+  color: var(--ifs-cinema-text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 800;
+}
+.ifs-cinema-social-divider::before,
+.ifs-cinema-social-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ifs-cinema-border-subtle);
+}
+.ifs-cinema-social-divider span { padding: 0 1rem; }
+
+.ifs-cinema-social-stack {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.ifs-cinema-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-sm);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.ifs-cinema-social-btn:hover {
+  border-color: var(--ifs-cinema-border-amber);
+  background: var(--ifs-cinema-brand-amber-subtle);
+}
+
+/* ==========================================================================
+   18. CONTACT CARDS, FORM & MAP
+   ========================================================================== */
+.ifs-cinema-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 4.5rem;
+  align-items: start;
+}
+
+.ifs-cinema-contact-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ifs-cinema-contact-info-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 2rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  transition: var(--ifs-cinema-transition-normal);
+}
+.ifs-cinema-contact-info-card:hover {
+  border-color: var(--ifs-cinema-border-amber);
+  transform: translateX(6px);
+}
+
+.ifs-cinema-info-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--ifs-cinema-brand-amber-subtle);
+  border: 1px solid var(--ifs-cinema-border-amber);
+  color: var(--ifs-cinema-brand-amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.35rem;
+}
+
+.ifs-cinema-info-content h4 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 20px;
+}
+.ifs-cinema-info-content p {
+  font-size: 0.92rem;
+  color: var(--ifs-cinema-text-secondary);
+  line-height: 1.6;
+}
+.ifs-cinema-info-content a {
+  color: var(--ifs-cinema-brand-amber);
+  font-weight: 700;
+}
+
+.ifs-cinema-form-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 3rem 2.5rem;
+}
+
+.ifs-cinema-form-header { margin-bottom: 2rem; }
+.ifs-cinema-form-header h3 {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.ifs-cinema-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.ifs-cinema-form-input,
+.ifs-cinema-form-select,
+.ifs-cinema-form-textarea {
+  width: 100%;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-sm);
+  padding: 0.9rem 1.15rem;
+  color: #fff;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+}
+
+.ifs-cinema-form-input:focus,
+.ifs-cinema-form-select:focus,
+.ifs-cinema-form-textarea:focus {
+  border-color: var(--ifs-cinema-brand-amber);
+}
+
+.ifs-cinema-form-textarea {
+  resize: vertical;
+  min-height: 130px;
+}
+
+.ifs-cinema-map-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  overflow: hidden;
+  height: 420px;
+  position: relative;
+}
+.ifs-cinema-map-card iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ==========================================================================
+   19. FOOTER COMPONENT & UTILITIES
+   ========================================================================== */
+.ifs-cinema-site-footer {
+  background: #010204;
+  border-top: 1px solid rgba(255, 157, 0, 0.25);
+  position: relative;
+  padding: 6rem 0 2.25rem;
+  color: var(--ifs-cinema-text-muted);
+  font-size: 0.9rem;
+  overflow: hidden;
+}
+
+.ifs-cinema-site-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ifs-cinema-brand-amber), transparent);
+}
+
+.ifs-cinema-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.1fr 1.9fr;
+  gap: 4rem;
+  margin-bottom: 4.5rem;
+}
+
+.ifs-cinema-brand-logo-footer {
+  display: inline-block;
+  background-color: #fff;
+  border-radius: 50%;
+  max-width: 120px;
+}
+
+.ifs-cinema-footer-brand-p {
+  color: var(--ifs-cinema-text-secondary);
+  max-width: 330px;
+  line-height: 1.75;
+  margin-top: 1.4rem;
+  margin-bottom: 1.75rem;
+  font-size: 0.92rem;
+}
+
+.ifs-cinema-social-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ifs-cinema-social-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-light);
+  color: var(--ifs-cinema-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+}
+.ifs-cinema-social-circle:hover {
+  background: var(--ifs-cinema-brand-amber);
+  color: #000;
+  border-color: var(--ifs-cinema-brand-amber);
+  transform: translateY(-3px);
+}
+.ifs-cinema-social-circle svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.ifs-cinema-footer-col h4 {
+  color: #fff;
+  font-size: 1.08rem;
+  font-weight: 800;
+  margin-bottom: 30px;
+  letter-spacing: -0.2px;
+  position: relative;
+  padding-bottom: 0.55rem;
+}
+
+.ifs-cinema-footer-col h4::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 28px;
+  height: 1px;
+  background: var(--ifs-cinema-brand-amber);
+  border-radius: var(--ifs-cinema-radius-full);
+}
+
+.ifs-cinema-footer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.ifs-cinema-footer-links a {
+  color: var(--ifs-cinema-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.ifs-cinema-footer-links a svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--ifs-cinema-brand-amber);
+  opacity: 0.7;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.ifs-cinema-footer-links a:hover {
+  color: #fff;
+  transform: translateX(4px);
+}
+.ifs-cinema-footer-links a:hover svg {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+.ifs-cinema-contact-card {
+  background: var(--ifs-cinema-bg-surface);
+  border: 1px solid var(--ifs-cinema-border-light);
+  border-radius: var(--ifs-cinema-radius-md);
+  padding: 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.ifs-cinema-contact-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+}
+
+.ifs-cinema-contact-icon-pill {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--ifs-cinema-brand-amber-subtle);
+  border: 1px solid var(--ifs-cinema-border-amber);
+  color: var(--ifs-cinema-brand-amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ifs-cinema-contact-icon-pill svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.ifs-cinema-contact-content .lbl {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--ifs-cinema-text-muted);
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.ifs-cinema-contact-content .val {
+  font-size: 0.88rem;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1.4;
+  display: block;
+  transition: color 0.2s ease;
+}
+.ifs-cinema-contact-content a.val:hover {
+  color: var(--ifs-cinema-brand-amber);
+}
+
+.ifs-cinema-footer-bottom-bar {
+  border-top: 1px solid var(--ifs-cinema-border-subtle);
+  padding-top: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--ifs-cinema-text-muted);
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.ifs-cinema-security-chips {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  font-size: 0.8rem;
+}
+.ifs-cinema-sec-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--ifs-cinema-text-secondary);
+}
+.ifs-cinema-sec-item svg {
+  width: 15px;
+  height: 15px;
+  fill: var(--ifs-cinema-brand-amber);
+}
+
+/* ==========================================================================
+   20. RESPONSIVE & PRINT MEDIA QUERIES
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .ifs-cinema-movie-grid-3, 
+  .ifs-cinema-gallery-masonry-refined,
+  .ifs-cinema-gallery-masonry,
+  .ifs-cinema-upcoming-grid-refined,
+  .ifs-cinema-hero-grid, 
+  .ifs-cinema-exp-grid, 
+  .ifs-cinema-modal-body, 
+  .ifs-cinema-footer-grid,
+  .ifs-cinema-split-grid,
+  .ifs-cinema-pillars-grid,
+  .ifs-cinema-metrics-grid,
+  .ifs-cinema-workspace-grid,
+  .ifs-cinema-pass-ticket-card,
+  .ifs-cinema-kpi-deck,
+  .ifs-cinema-checkout-layout,
+  .ifs-cinema-pass-center-wrap,
+  .ifs-cinema-movie-header-grid,
+  .ifs-cinema-stage-card,
+  .ifs-cinema-auth-stage,
+  .ifs-cinema-contact-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2.5rem !important;
+  }
+  
+  .ifs-cinema-schedule-feature-card {
+    grid-template-columns: 1fr !important;
+    text-align: left;
+  }
+  .ifs-cinema-gallery-card-pro.span-2 {
+    grid-column: span 1 !important;
+  }
+  .ifs-cinema-nav-menu { display: none; }
+  .ifs-cinema-mobile-toggle { display: block; }
+  .ifs-cinema-account-sidebar,
+  .ifs-cinema-order-summary-card { position: static; }
+  .ifs-cinema-pass-right-qr { border-left: none; border-top: 2px dashed var(--ifs-cinema-border-light); }
+  .ifs-cinema-poster-frame-3d { max-width: 340px; margin: 0 auto; }
+  .ifs-cinema-seating-arena {
+    border-right: none;
+    border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+  }
+  .ifs-cinema-auth-showcase { display: none; }
+  .ifs-cinema-auth-workspace { padding: 3rem 2rem; }
+}
+
+@media (max-width: 768px) {
+  .ifs-cinema-form-grid-2,
+  .ifs-cinema-form-row { 
+    grid-template-columns: 1fr; 
+    gap: 0; 
+  }
+  .ifs-cinema-payment-grid { grid-template-columns: 1fr; }
+  .ifs-cinema-checkout-steps { gap: 1rem; }
+}
+
+@media print {
+  .ifs-cinema-topbar,
+  .ifs-cinema-navbar,
+  .ifs-cinema-actions-stack,
+  .ifs-cinema-site-footer,
+  .ifs-cinema-thanks-hero {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .ifs-cinema-pass-center-wrap {
+    grid-template-columns: 1fr !important;
+  }
+  .ifs-cinema-pass-main-card,
+  .ifs-cinema-qr-side-card {
+    border-color: #000 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .ifs-cinema-pass-spec-item .value {
+    color: #000 !important;
+  }
+}
