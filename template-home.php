@@ -5,7 +5,20 @@
  * @package Noorjahan_Movie_Theater
  */
 
-get_header(); ?>
+get_header(); 
+
+// Fetch currency and pricing settings from admin settings
+$currency_symbol = get_option( 'bsc_currency_symbol', 'BDT' );
+$pricing_tiers   = get_option( 'bsc_pricing_tiers', array(
+    array( 'title' => 'Standard Seating', 'amount' => '400' ),
+    array( 'title' => 'VIP Motorized Recliner', 'amount' => '500' )
+) );
+$min_price = 400.00;
+if (!empty($pricing_tiers)) {
+    $amounts = array_column($pricing_tiers, 'amount');
+    $min_price = min(array_map('floatval', $amounts));
+}
+?>
 
 <main id="primary" class="site-main">
 
@@ -51,7 +64,12 @@ get_header(); ?>
           </div>
           <div class="ifs-cinema-hero-spec-node">
             <div class="k"><?php esc_html_e( 'Seating Tiers', 'noorjahan-movie-theater' ); ?></div>
-            <div class="v"><?php esc_html_e( 'VIP Recliners & Standard', 'noorjahan-movie-theater' ); ?></div>
+            <div class="v">
+              <?php 
+                $tier_names = array_column($pricing_tiers, 'title');
+                echo !empty($tier_names) ? esc_html(implode(' & ', $tier_names)) : 'VIP Recliners & Standard';
+              ?>
+            </div>
           </div>
         </div>
 
@@ -81,7 +99,9 @@ get_header(); ?>
               <span style="font-size:0.75rem; color:var(--ifs-cinema-text-muted); font-weight:800; text-transform:uppercase; display:block;"><?php esc_html_e( 'Daily Screenings', 'noorjahan-movie-theater' ); ?></span>
               <strong style="color:#fff; font-size:1rem; font-family:var(--ifs-cinema-font-mono);"><?php esc_html_e( '11:00 AM – 02:00 AM', 'noorjahan-movie-theater' ); ?></strong>
             </div>
-            <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'FROM BDT 400', 'noorjahan-movie-theater' ); ?></span>
+            <span class="ifs-cinema-badge ifs-cinema-badge-amber">
+              <?php echo sprintf( esc_html__( 'FROM %s %s', 'noorjahan-movie-theater' ), esc_html( $currency_symbol ), number_format( $min_price, 0 ) ); ?>
+            </span>
           </div>
         </div>
       </div>
@@ -111,7 +131,6 @@ $details_page_url = home_url( '/movie-details/' );
       <?php if ( ! empty( $latest_movies ) ) : ?>
         <?php foreach ( $latest_movies as $movie ) : 
           $poster_url       = ! empty( $movie->poster_url ) ? esc_url( $movie->poster_url ) : 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=700&auto=format&fit=crop&q=75';
-          $ticket_price     = ! empty( $movie->ticket_price ) ? floatval( $movie->ticket_price ) : 500.00;
           $rating           = ! empty( $movie->rating ) ? esc_html( $movie->rating ) : '8.5';
           $badge            = ! empty( $movie->badge_tag ) ? esc_html( $movie->badge_tag ) : '4K LASER';
           $auditorium       = ! empty( $movie->auditorium ) ? esc_html( $movie->auditorium ) : 'Auditorium 1 (23 Seats)';
@@ -241,7 +260,7 @@ $scheduled_movies = $wpdb->get_results( "SELECT * FROM {$table_movies} ORDER BY 
               $showtimes = array_map( 'trim', explode( ',', $movie->showtimes ) );
             }
           }
-          if ( empty( $showtimes ) ) { $showtimes = array( '6:00 PM' ); }
+          if ( empty( $showtimes ) ) { $showtimes = array( '18:00' ); }
 
           $movie_link = esc_url( home_url( '/movie-details/?movie_id=' . $movie->id ) );
         ?>
@@ -301,7 +320,9 @@ $scheduled_movies = $wpdb->get_results( "SELECT * FROM {$table_movies} ORDER BY 
             <p style="font-size: 0.88rem; color: var(--ifs-cinema-text-secondary); margin-bottom: 1.25rem; line-height: 1.6;"><?php esc_html_e( 'Fresh Butter Popcorn Tub + Fountain Beverage (500ml)', 'noorjahan-movie-theater' ); ?></p>
           </div>
           <div>
-            <div style="font-size: 1.5rem; font-weight: 900; color: var(--ifs-cinema-brand-amber); font-family: var(--ifs-cinema-font-mono);">BDT 500</div>
+            <div style="font-size: 1.5rem; font-weight: 900; color: var(--ifs-cinema-brand-amber); font-family: var(--ifs-cinema-font-mono);">
+              <?php echo esc_html( $currency_symbol ); ?> 500
+            </div>
           </div>
         </div>
 
@@ -316,7 +337,9 @@ $scheduled_movies = $wpdb->get_results( "SELECT * FROM {$table_movies} ORDER BY 
             <p style="font-size: 0.88rem; color: var(--ifs-cinema-text-secondary); margin-bottom: 1.25rem; line-height: 1.6;"><?php esc_html_e( 'Crispy Chicken Strips + Butter Popcorn + Large Beverage', 'noorjahan-movie-theater' ); ?></p>
           </div>
           <div>
-            <div style="font-size: 1.5rem; font-weight: 900; color: var(--ifs-cinema-brand-amber); font-family: var(--ifs-cinema-font-mono);">BDT 800</div>
+            <div style="font-size: 1.5rem; font-weight: 900; color: var(--ifs-cinema-brand-amber); font-family: var(--ifs-cinema-font-mono);">
+              <?php echo esc_html( $currency_symbol ); ?> 800
+            </div>
           </div>
         </div>
       </div>
