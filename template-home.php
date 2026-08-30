@@ -88,227 +88,196 @@ get_header(); ?>
     </div>
   </section>
 
-  <!-- 04. NOW SHOWING (3-BOX VECTOR GRID) -->
-  <section class="ifs-cinema-section-padding" id="movies">
-    <div class="ifs-cinema-container">
+<?php
+global $wpdb;
+$table_movies = $wpdb->prefix . 'bsc_control_movies';
+$latest_movies = $wpdb->get_results("SELECT * FROM {$table_movies} ORDER BY id DESC LIMIT 3");
 
-      <div class="ifs-cinema-section-title">
-        <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'LIVE SCREENINGS', 'noorjahan-movie-theater' ); ?></span>
-        <h4><?php esc_html_e( 'Now Showing in Theatres', 'noorjahan-movie-theater' ); ?></h4>
-        <p><?php esc_html_e( 'Live auditorium schedules and real-time 30-seat availability.', 'noorjahan-movie-theater' ); ?></p>
-      </div>
+// Base URL for the Single Movie Details page
+$details_page_url = home_url( '/movie-details/' );
+?>
 
-      <div class="ifs-cinema-movie-grid-3">
-        <!-- Box 1 -->
-        <div class="ifs-cinema-card" tabindex="0">
-          <div class="ifs-cinema-poster-wrap">
-            <div class="ifs-cinema-card-tag"><span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'SPECIAL COMBO', 'noorjahan-movie-theater' ); ?></span></div>
-            <div class="ifs-cinema-card-rating">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="display:inline-block; vertical-align:-1px; margin-right:2px;">
-                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-              </svg>
-              8.6
-            </div>
-            <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/evil-dead.jpg' ) ); ?>" 
-                 alt="<?php esc_attr_e( 'Food Combo', 'noorjahan-movie-theater' ); ?>" 
-                 class="ifs-cinema-poster-img"
-                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=700&auto=format&fit=crop&q=75';">
-            <div class="ifs-cinema-card-overlay">
-              <div>
-                <h3 style="color:#fff; font-size:1.35rem; font-weight:900; margin-bottom:1.25rem;"><?php esc_html_e( 'FOOD COMBO (EVIL DEAD BURN)', 'noorjahan-movie-theater' ); ?></h3>
-                <div class="ifs-cinema-meta-row"><span><?php esc_html_e( 'Release:', 'noorjahan-movie-theater' ); ?></span><strong>July 10, 2026</strong></div>
-                <div class="ifs-cinema-meta-row"><span><?php esc_html_e( 'Genre:', 'noorjahan-movie-theater' ); ?></span><strong><?php esc_html_e( 'Horror / Thriller', 'noorjahan-movie-theater' ); ?></strong></div>
-                <div class="ifs-cinema-meta-row"><span><?php esc_html_e( 'Duration:', 'noorjahan-movie-theater' ); ?></span><strong>01h 50m</strong></div>
-              </div>
-              <button class="ifs-cinema-action-btn" onclick="ifsCinemaOpenSeatModal('FOOD COMBO (EVIL DEAD BURN)', 'Auditorium 1 (30 Seats)', 500.00)">
-                <span class="ifs-cinema-circle-icon">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
-                    <path d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2zm-9 7.5h-2v-2h2v2zm0-4.5h-2v-2h2v2zm0-4.5h-2v-2h2v2z"/>
-                  </svg>
-                </span>
-                <?php esc_html_e( 'Reserve 30-Seat Hall', 'noorjahan-movie-theater' ); ?>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="margin-left:2px;">
-                  <path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="ifs-cinema-card-footer">
-            <h3 class="ifs-cinema-card-title"><?php esc_html_e( 'FOOD COMBO (EVIL DEAD BURN)', 'noorjahan-movie-theater' ); ?></h3>
-            <p style="font-size:0.85rem; color:var(--ifs-cinema-text-secondary);"><?php esc_html_e( 'Release: July 10, 2026', 'noorjahan-movie-theater' ); ?></p>
-          </div>
-        </div>
+<!-- 04. NOW SHOWING (3-BOX DYNAMIC DATABASE GRID) -->
+<section class="ifs-cinema-section-padding" id="movies">
+  <div class="ifs-cinema-container">
 
-        <!-- Box 2 -->
-        <div class="ifs-cinema-card" tabindex="0">
-          <div class="ifs-cinema-poster-wrap">
-            <div class="ifs-cinema-card-tag"><span class="ifs-cinema-badge ifs-cinema-badge-imax"><?php esc_html_e( 'IMAX LASER', 'noorjahan-movie-theater' ); ?></span></div>
-            <div class="ifs-cinema-card-rating">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="display:inline-block; vertical-align:-1px; margin-right:2px;">
-                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-              </svg>
-              8.8
-            </div>
-            <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/dune2.jpg' ) ); ?>" 
-                 alt="<?php esc_attr_e( 'Dune', 'noorjahan-movie-theater' ); ?>" 
-                 class="ifs-cinema-poster-img"
-                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1534447677768-be436bb09401?w=700&auto=format&fit=crop&q=75';">
-            <div class="ifs-cinema-card-overlay">
-              <div>
-                <h3 style="color:#fff; font-size:1.35rem; font-weight:900; margin-bottom:1.25rem;"><?php esc_html_e( 'DUNE: PART TWO', 'noorjahan-movie-theater' ); ?></h3>
-                <div class="ifs-cinema-meta-row"><span><?php esc_html_e( 'Release:', 'noorjahan-movie-theater' ); ?></span><strong>August 14, 2026</strong></div>
-                <div class="ifs-cinema-meta-row"><span><?php esc_html_e( 'Genre:', 'noorjahan-movie-theater' ); ?></span><strong><?php esc_html_e( 'Sci-Fi / Adventure', 'noorjahan-movie-theater' ); ?></strong></div>
-                <div class="ifs-cinema-meta-row"><span><?php esc_html_e( 'Duration:', 'noorjahan-movie-theater' ); ?></span><strong>02h 46m</strong></div>
-              </div>
-              <button class="ifs-cinema-action-btn" onclick="ifsCinemaOpenSeatModal('Dune: Part Two', 'Auditorium 2 (30 Seats)', 450.00)">
-                <span class="ifs-cinema-circle-icon">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
-                    <path d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2zm-9 7.5h-2v-2h2v2zm0-4.5h-2v-2h2v2zm0-4.5h-2v-2h2v2z"/>
-                  </svg>
-                </span>
-                <?php esc_html_e( 'Reserve 30-Seat Hall', 'noorjahan-movie-theater' ); ?>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="margin-left:2px;">
-                  <path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="ifs-cinema-card-footer">
-            <h3 class="ifs-cinema-card-title"><?php esc_html_e( 'DUNE: PART TWO', 'noorjahan-movie-theater' ); ?></h3>
-            <p style="font-size:0.85rem; color:var(--ifs-cinema-text-secondary);"><?php esc_html_e( 'Release: August 14, 2026', 'noorjahan-movie-theater' ); ?></p>
-          </div>
-        </div>
-
-        <!-- Box 3 -->
-        <div class="ifs-cinema-card" tabindex="0">
-          <div class="ifs-cinema-poster-wrap">
-            <div class="ifs-cinema-card-tag"><span class="ifs-cinema-badge ifs-cinema-badge-dolby"><?php esc_html_e( 'DOLBY ATMOS', 'noorjahan-movie-theater' ); ?></span></div>
-            <div class="ifs-cinema-card-rating">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="display:inline-block; vertical-align:-1px; margin-right:2px;">
-                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-              </svg>
-              8.9
-            </div>
-            <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/oppenheimer.jpg' ) ); ?>" 
-                 alt="<?php esc_attr_e( 'Oppenheimer', 'noorjahan-movie-theater' ); ?>" 
-                 class="ifs-cinema-poster-img"
-                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=700&auto=format&fit=crop&q=75';">
-            <div class="ifs-cinema-card-overlay">
-              <div>
-                <h3 style="color:#fff; font-size:1.35rem; font-weight:900; margin-bottom:1.25rem;"><?php esc_html_e( 'OPPENHEIMER', 'noorjahan-movie-theater' ); ?></h3>
-                <div class="ifs-cinema-meta-row"><span><?php esc_html_e( 'Release:', 'noorjahan-movie-theater' ); ?></span><strong>June 20, 2026</strong></div>
-                <div class="ifs-cinema-meta-row"><span><?php esc_html_e( 'Genre:', 'noorjahan-movie-theater' ); ?></span><strong><?php esc_html_e( 'Biography / Drama', 'noorjahan-movie-theater' ); ?></strong></div>
-                <div class="ifs-cinema-meta-row"><span><?php esc_html_e( 'Duration:', 'noorjahan-movie-theater' ); ?></span><strong>03h 00m</strong></div>
-              </div>
-              <button class="ifs-cinema-action-btn" onclick="ifsCinemaOpenSeatModal('Oppenheimer', 'Auditorium 3 (30 Seats)', 400.00)">
-                <span class="ifs-cinema-circle-icon">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
-                    <path d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2zm-9 7.5h-2v-2h2v2zm0-4.5h-2v-2h2v2zm0-4.5h-2v-2h2v2z"/>
-                  </svg>
-                </span>
-                <?php esc_html_e( 'Reserve 30-Seat Hall', 'noorjahan-movie-theater' ); ?>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="margin-left:2px;">
-                  <path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="ifs-cinema-card-footer">
-            <h3 class="ifs-cinema-card-title"><?php esc_html_e( 'OPPENHEIMER', 'noorjahan-movie-theater' ); ?></h3>
-            <p style="font-size:0.85rem; color:var(--ifs-cinema-text-secondary);"><?php esc_html_e( 'Release: June 20, 2026', 'noorjahan-movie-theater' ); ?></p>
-          </div>
-        </div>
-      </div>
+    <div class="ifs-cinema-section-title">
+      <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'LIVE SCREENINGS', 'noorjahan-movie-theater' ); ?></span>
+      <h4><?php esc_html_e( 'Now Showing in Theatres', 'noorjahan-movie-theater' ); ?></h4>
+      <p><?php esc_html_e( 'Live auditorium schedules and real-time seat availability.', 'noorjahan-movie-theater' ); ?></p>
     </div>
-  </section>
 
-  <!-- 05. UPGRADED LUXURY SCREENING SCHEDULE -->
-  <section class="ifs-cinema-section-padding" id="schedule" style="background: var(--ifs-cinema-bg-surface);">
-    <div class="ifs-cinema-container">
+    <div class="ifs-cinema-movie-grid-3">
+      <?php if ( ! empty( $latest_movies ) ) : ?>
+        <?php foreach ( $latest_movies as $movie ) : 
+          $poster_url       = ! empty( $movie->poster_url ) ? esc_url( $movie->poster_url ) : 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=700&auto=format&fit=crop&q=75';
+          $ticket_price     = ! empty( $movie->ticket_price ) ? floatval( $movie->ticket_price ) : 500.00;
+          $rating           = ! empty( $movie->rating ) ? esc_html( $movie->rating ) : '8.5';
+          $badge            = ! empty( $movie->badge_tag ) ? esc_html( $movie->badge_tag ) : '4K LASER';
+          $auditorium       = ! empty( $movie->auditorium ) ? esc_html( $movie->auditorium ) : 'Auditorium 1 (23 Seats)';
+          $single_movie_url = esc_url( add_query_arg( 'movie_id', $movie->id, $details_page_url ) );
+        ?>
+          <div class="ifs-cinema-card" tabindex="0">
+            <div class="ifs-cinema-poster-wrap">
+              <div class="ifs-cinema-card-tag">
+                <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php echo $badge; ?></span>
+              </div>
+              <div class="ifs-cinema-card-rating">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="display:inline-block; vertical-align:-1px; margin-right:2px;">
+                  <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                </svg>
+                <?php echo $rating; ?>
+              </div>
 
-      <div class="ifs-cinema-section-title">
-        <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'AUDITORIUM TIMETABLE', 'noorjahan-movie-theater' ); ?></span>
-        <h4><?php esc_html_e( 'Daily Screening Schedule', 'noorjahan-movie-theater' ); ?></h4>
-        <p><?php esc_html_e( 'Live auditorium schedules and real-time 30-seat availability.', 'noorjahan-movie-theater' ); ?></p>
-      </div>
+              <!-- Poster Image wrapped with Single Movie link -->
+              <a href="<?php echo $single_movie_url; ?>" style="display:block; width:100%; height:100%;">
+                <img src="<?php echo $poster_url; ?>" 
+                     alt="<?php echo esc_attr( $movie->title ); ?>" 
+                     class="ifs-cinema-poster-img"
+                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=700&auto=format&fit=crop&q=75';">
+              </a>
+              
+              <div class="ifs-cinema-card-overlay">
+                <div>
+                  <h3 style="color:#fff; font-size:1.35rem; font-weight:900; margin-bottom:1.25rem;">
+                    <a href="<?php echo $single_movie_url; ?>" style="color:#fff; text-decoration:none;">
+                      <?php echo esc_html( $movie->title ); ?>
+                    </a>
+                  </h3>
+                  <?php 
+                    $rel_dates = json_decode($movie->release_date, true);
+                    $display_date = is_array($rel_dates) ? implode(', ', $rel_dates) : $movie->release_date;
+                    if ( ! empty( $display_date ) ) : 
+                  ?>
+                    <div class="ifs-cinema-meta-row">
+                      <span><?php esc_html_e( 'Dates:', 'noorjahan-movie-theater' ); ?></span>
+                      <strong><?php echo esc_html( $display_date ); ?></strong>
+                    </div>
+                  <?php endif; ?>
+                  <?php if ( ! empty( $movie->genre ) ) : ?>
+                    <div class="ifs-cinema-meta-row">
+                      <span><?php esc_html_e( 'Genre:', 'noorjahan-movie-theater' ); ?></span>
+                      <strong><?php echo esc_html( $movie->genre ); ?></strong>
+                    </div>
+                  <?php endif; ?>
+                  <?php if ( ! empty( $movie->duration ) ) : ?>
+                    <div class="ifs-cinema-meta-row">
+                      <span><?php esc_html_e( 'Duration:', 'noorjahan-movie-theater' ); ?></span>
+                      <strong><?php echo esc_html( $movie->duration ); ?></strong>
+                    </div>
+                  <?php endif; ?>
+                </div>
 
-      <div class="ifs-cinema-schedule-deck-wrap">
-        
-        <!-- Schedule Card 1 -->
-        <div class="ifs-cinema-schedule-feature-card">
-          <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/evil-dead.jpg' ) ); ?>" 
-               class="ifs-cinema-schedule-thumb" 
-               alt="<?php esc_attr_e( 'Evil Dead Burn', 'noorjahan-movie-theater' ); ?>"
-               onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&auto=format&fit=crop&q=75';">
-          <div>
-            <span class="ifs-cinema-badge ifs-cinema-badge-amber" style="margin-bottom:0.4rem;"><?php esc_html_e( 'Giant Screen 4K • Auditorium 1', 'noorjahan-movie-theater' ); ?></span>
-            <h3 style="color:#fff; font-size:1.35rem; font-weight:900;"><?php esc_html_e( 'FOOD COMBO (EVIL DEAD BURN)', 'noorjahan-movie-theater' ); ?></h3>
-            <p style="font-size:0.85rem; color:var(--ifs-cinema-text-muted); margin-top:2px;"><?php esc_html_e( 'Experience includes in-seat food combo + admission pass', 'noorjahan-movie-theater' ); ?></p>
-          </div>
-          <div>
-            <div style="font-size:0.75rem; font-weight:800; color:var(--ifs-cinema-text-muted); text-transform:uppercase; margin-bottom:0.4rem;"><?php esc_html_e( 'Showtime', 'noorjahan-movie-theater' ); ?></div>
-            <div>
-              <button class="ifs-cinema-time-pill-btn" onclick="ifsCinemaOpenSeatModal('FOOD COMBO (EVIL DEAD BURN)', 'Auditorium 1 (2:30 PM)', 500.00)">2:30 PM</button>
-              <button class="ifs-cinema-time-pill-btn" onclick="ifsCinemaOpenSeatModal('FOOD COMBO (EVIL DEAD BURN)', 'Auditorium 1 (6:00 PM)', 500.00)">6:00 PM</button>
-              <button class="ifs-cinema-time-pill-btn" onclick="ifsCinemaOpenSeatModal('FOOD COMBO (EVIL DEAD BURN)', 'Auditorium 1 (9:45 PM)', 500.00)">9:45 PM</button>
+                <!-- Single Movie details & seat selection action button -->
+                <a href="<?php echo $single_movie_url; ?>" class="ifs-cinema-action-btn" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
+                  <span class="ifs-cinema-circle-icon">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+                      <path d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2zm-9 7.5h-2v-2h2v2zm0-4.5h-2v-2h2v2zm0-4.5h-2v-2h2v2z"/>
+                    </svg>
+                  </span>
+                  <?php esc_html_e( 'View Details & Book', 'noorjahan-movie-theater' ); ?>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="margin-left:2px;">
+                    <path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+            
+            <div class="ifs-cinema-card-footer">
+              <h3 class="ifs-cinema-card-title">
+                <a href="<?php echo $single_movie_url; ?>" style="color:inherit; text-decoration:none;">
+                  <?php echo esc_html( $movie->title ); ?>
+                </a>
+              </h3>
+              <p style="font-size:0.85rem; color:var(--ifs-cinema-text-secondary);">
+                <?php echo ! empty( $display_date ) ? esc_html__( 'Screening: ', 'noorjahan-movie-theater' ) . esc_html( $display_date ) : esc_html( $movie->category ); ?>
+              </p>
             </div>
           </div>
-          <div>
-            <button class="ifs-cinema-btn ifs-cinema-btn-amber ifs-cinema-btn-sm" onclick="ifsCinemaOpenSeatModal('FOOD COMBO (EVIL DEAD BURN)', 'Auditorium 1 (30 Seats)', 500.00)"><?php esc_html_e( 'Book Now', 'noorjahan-movie-theater' ); ?></button>
-          </div>
-        </div>
-
-        <!-- Schedule Card 2 -->
-        <div class="ifs-cinema-schedule-feature-card">
-          <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/dune2.jpg' ) ); ?>" 
-               class="ifs-cinema-schedule-thumb" 
-               alt="<?php esc_attr_e( 'Dune 2', 'noorjahan-movie-theater' ); ?>"
-               onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&auto=format&fit=crop&q=75';">
-          <div>
-            <span class="ifs-cinema-badge ifs-cinema-badge-imax" style="margin-bottom:0.4rem;"><?php esc_html_e( 'IMAX® Laser • Auditorium 2', 'noorjahan-movie-theater' ); ?></span>
-            <h3 style="color:#fff; font-size:1.35rem; font-weight:900;"><?php esc_html_e( 'DUNE: PART TWO', 'noorjahan-movie-theater' ); ?></h3>
-            <p style="font-size:0.85rem; color:var(--ifs-cinema-text-muted); margin-top:2px;"><?php esc_html_e( 'Full 1.43:1 expanded aspect ratio projection', 'noorjahan-movie-theater' ); ?></p>
-          </div>
-          <div>
-            <div style="font-size:0.75rem; font-weight:800; color:var(--ifs-cinema-text-muted); text-transform:uppercase; margin-bottom:0.4rem;"><?php esc_html_e( 'Showtime', 'noorjahan-movie-theater' ); ?></div>
-            <div>
-              <button class="ifs-cinema-time-pill-btn" onclick="ifsCinemaOpenSeatModal('Dune: Part Two', 'Auditorium 2 (1:30 PM)', 450.00)">1:30 PM</button>
-              <button class="ifs-cinema-time-pill-btn" onclick="ifsCinemaOpenSeatModal('Dune: Part Two', 'Auditorium 2 (4:45 PM)', 450.00)">4:45 PM</button>
-              <button class="ifs-cinema-time-pill-btn" onclick="ifsCinemaOpenSeatModal('Dune: Part Two', 'Auditorium 2 (8:15 PM)', 450.00)">8:15 PM</button>
-            </div>
-          </div>
-          <div>
-            <button class="ifs-cinema-btn ifs-cinema-btn-amber ifs-cinema-btn-sm" onclick="ifsCinemaOpenSeatModal('Dune: Part Two', 'Auditorium 2 (30 Seats)', 450.00)"><?php esc_html_e( 'Book Now', 'noorjahan-movie-theater' ); ?></button>
-          </div>
-        </div>
-
-        <!-- Schedule Card 3 -->
-        <div class="ifs-cinema-schedule-feature-card">
-          <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/oppenheimer.jpg' ) ); ?>" 
-               class="ifs-cinema-schedule-thumb" 
-               alt="<?php esc_attr_e( 'Oppenheimer', 'noorjahan-movie-theater' ); ?>"
-               onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=200&auto=format&fit=crop&q=75';">
-          <div>
-            <span class="ifs-cinema-badge ifs-cinema-badge-dolby" style="margin-bottom:0.4rem;"><?php esc_html_e( 'Dolby Atmos® • Auditorium 3', 'noorjahan-movie-theater' ); ?></span>
-            <h3 style="color:#fff; font-size:1.35rem; font-weight:900;"><?php esc_html_e( 'OPPENHEIMER', 'noorjahan-movie-theater' ); ?></h3>
-            <p style="font-size:0.85rem; color:var(--ifs-cinema-text-muted); margin-top:2px;"><?php esc_html_e( '128-channel spatial acoustic mastering', 'noorjahan-movie-theater' ); ?></p>
-          </div>
-          <div>
-            <div style="font-size:0.75rem; font-weight:800; color:var(--ifs-cinema-text-muted); text-transform:uppercase; margin-bottom:0.4rem;"><?php esc_html_e( 'Showtime', 'noorjahan-movie-theater' ); ?></div>
-            <div>
-              <button class="ifs-cinema-time-pill-btn" onclick="ifsCinemaOpenSeatModal('Oppenheimer', 'Auditorium 3 (12:00 PM)', 400.00)">12:00 PM</button>
-              <button class="ifs-cinema-time-pill-btn" onclick="ifsCinemaOpenSeatModal('Oppenheimer', 'Auditorium 3 (3:45 PM)', 400.00)">3:45 PM</button>
-              <button class="ifs-cinema-time-pill-btn" onclick="ifsCinemaOpenSeatModal('Oppenheimer', 'Auditorium 3 (7:30 PM)', 400.00)">7:30 PM</button>
-            </div>
-          </div>
-          <div>
-            <button class="ifs-cinema-btn ifs-cinema-btn-amber ifs-cinema-btn-sm" onclick="ifsCinemaOpenSeatModal('Oppenheimer', 'Auditorium 3 (30 Seats)', 400.00)"><?php esc_html_e( 'Book Now', 'noorjahan-movie-theater' ); ?></button>
-          </div>
-        </div>
-
-      </div>
+        <?php endforeach; ?>
+      <?php else : ?>
+        <p style="color:var(--ifs-cinema-text-secondary); grid-column: 1 / -1; text-align:center;">
+          <?php esc_html_e( 'No movies scheduled right now.', 'noorjahan-movie-theater' ); ?>
+        </p>
+      <?php endif; ?>
     </div>
-  </section>
+
+  </div>
+</section>
+
+<?php
+global $wpdb;
+$table_movies = $wpdb->prefix . 'bsc_control_movies';
+$scheduled_movies = $wpdb->get_results( "SELECT * FROM {$table_movies} ORDER BY id DESC LIMIT 5" );
+?>
+
+<!-- 05. UPGRADED LUXURY SCREENING SCHEDULE -->
+<section class="ifs-cinema-section-padding" id="schedule" style="background: var(--ifs-cinema-bg-surface);">
+  <div class="ifs-cinema-container">
+
+    <div class="ifs-cinema-section-title">
+      <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'AUDITORIUM TIMETABLE', 'big-screen-cinemas' ); ?></span>
+      <h4><?php esc_html_e( 'Daily Screening Schedule', 'big-screen-cinemas' ); ?></h4>
+      <p><?php esc_html_e( 'Live auditorium schedules and real-time seat availability.', 'big-screen-cinemas' ); ?></p>
+    </div>
+
+    <div class="ifs-cinema-schedule-deck-wrap">
+      
+      <?php if ( ! empty( $scheduled_movies ) ) : ?>
+        <?php foreach ( $scheduled_movies as $movie ) : 
+          $poster     = ! empty( $movie->poster_url ) ? esc_url( $movie->poster_url ) : 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&auto=format&fit=crop&q=75';
+          $title      = ! empty( $movie->title ) ? esc_html( $movie->title ) : 'Feature Presentation';
+          $auditorium = ! empty( $movie->auditorium ) ? esc_html( $movie->auditorium ) : 'Auditorium 1 (23 Seats)';
+          $badge      = ! empty( $movie->badge_tag ) ? esc_html( $movie->badge_tag ) : '4K LASER';
+          $short_desc = ! empty( $movie->short_description ) ? esc_html( $movie->short_description ) : 'Experience state-of-the-art projection and immersive acoustics.';
+          
+          // Parse dynamic showtimes array from JSON
+          $showtimes = array();
+          if ( ! empty( $movie->showtimes ) ) {
+            $decoded = json_decode( $movie->showtimes, true );
+            if ( is_array( $decoded ) ) {
+              $showtimes = $decoded;
+            } else {
+              $showtimes = array_map( 'trim', explode( ',', $movie->showtimes ) );
+            }
+          }
+          if ( empty( $showtimes ) ) { $showtimes = array( '6:00 PM' ); }
+
+          $movie_link = esc_url( home_url( '/movie-details/?movie_id=' . $movie->id ) );
+        ?>
+          <!-- Dynamic Schedule Card -->
+          <div class="ifs-cinema-schedule-feature-card">
+            <img src="<?php echo $poster; ?>" 
+                 class="ifs-cinema-schedule-thumb" 
+                 alt="<?php echo esc_attr( $title ); ?>"
+                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&auto=format&fit=crop&q=75';">
+            <div>
+              <span class="ifs-cinema-badge ifs-cinema-badge-amber" style="margin-bottom:0.4rem;"><?php echo $badge . ' • ' . $auditorium; ?></span>
+              <h3 style="color:#fff; font-size:1.35rem; font-weight:900;"><?php echo $title; ?></h3>
+              <p style="font-size:0.85rem; color:var(--ifs-cinema-text-muted); margin-top:2px;"><?php echo $short_desc; ?></p>
+            </div>
+            <div>
+              <div style="font-size:0.75rem; font-weight:800; color:var(--ifs-cinema-text-muted); text-transform:uppercase; margin-bottom:0.4rem;"><?php esc_html_e( 'Showtimes', 'big-screen-cinemas' ); ?></div>
+              <div>
+                <?php foreach ( $showtimes as $time ) : 
+                  $formatted_time = (strpos($time, ':') !== false && strlen($time) <= 5) ? date('h:i A', strtotime($time)) : $time;
+                ?>
+                  <a href="<?php echo $movie_link; ?>" class="ifs-cinema-time-pill-btn" style="text-decoration:none; display:inline-block; padding:0.3rem 0.6rem; margin:2px; background:#1e293b; color:#fff; border-radius:4px; font-size:0.8rem;"><?php echo esc_html( $formatted_time ); ?></a>
+                <?php endforeach; ?>
+              </div>
+            </div>
+            <div>
+              <a href="<?php echo $movie_link; ?>" class="ifs-cinema-btn ifs-cinema-btn-amber ifs-cinema-btn-sm" style="text-decoration:none;"><?php esc_html_e( 'Book Now', 'big-screen-cinemas' ); ?></a>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      <?php else : ?>
+        <p style="color:var(--ifs-cinema-text-muted); text-align:center;"><?php esc_html_e( 'No screening schedules currently active.', 'big-screen-cinemas' ); ?></p>
+      <?php endif; ?>
+
+    </div>
+  </div>
+</section>
 
   <!-- 07. GOURMET CONCESSIONS & COMBOS -->
   <section class="ifs-cinema-section-padding" id="combos" style="background: var(--ifs-cinema-bg-surface);">
@@ -321,7 +290,7 @@ get_header(); ?>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 2rem;">
-        <div class="ifs-cinema-combo-card">
+        <div class="ifs-cinema-combo-card" style="display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div class="ifs-cinema-combo-icon-wrap">
               <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
@@ -332,12 +301,11 @@ get_header(); ?>
             <p style="font-size: 0.88rem; color: var(--ifs-cinema-text-secondary); margin-bottom: 1.25rem; line-height: 1.6;"><?php esc_html_e( 'Fresh Butter Popcorn Tub + Fountain Beverage (500ml)', 'noorjahan-movie-theater' ); ?></p>
           </div>
           <div>
-            <div style="font-size: 1.5rem; font-weight: 900; color: var(--ifs-cinema-brand-amber); margin-bottom: 1.25rem; font-family: var(--ifs-cinema-font-mono);">BDT 500</div>
-            <button class="ifs-cinema-btn ifs-cinema-btn-secondary ifs-cinema-btn-sm" style="width: 100%;" onclick="alert('<?php echo esc_js( __( 'Standard Popcorn & Drink Added!', 'noorjahan-movie-theater' ) ); ?>')"><?php esc_html_e( '+ Add to Order', 'noorjahan-movie-theater' ); ?></button>
+            <div style="font-size: 1.5rem; font-weight: 900; color: var(--ifs-cinema-brand-amber); font-family: var(--ifs-cinema-font-mono);">BDT 500</div>
           </div>
         </div>
 
-        <div class="ifs-cinema-combo-card">
+        <div class="ifs-cinema-combo-card" style="display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div class="ifs-cinema-combo-icon-wrap">
               <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
@@ -348,8 +316,7 @@ get_header(); ?>
             <p style="font-size: 0.88rem; color: var(--ifs-cinema-text-secondary); margin-bottom: 1.25rem; line-height: 1.6;"><?php esc_html_e( 'Crispy Chicken Strips + Butter Popcorn + Large Beverage', 'noorjahan-movie-theater' ); ?></p>
           </div>
           <div>
-            <div style="font-size: 1.5rem; font-weight: 900; color: var(--ifs-cinema-brand-amber); margin-bottom: 1.25rem; font-family: var(--ifs-cinema-font-mono);">BDT 800</div>
-            <button class="ifs-cinema-btn ifs-cinema-btn-secondary ifs-cinema-btn-sm" style="width: 100%;" onclick="alert('<?php echo esc_js( __( 'Popcorn, Chicken Strips & Drink Added!', 'noorjahan-movie-theater' ) ); ?>')"><?php esc_html_e( '+ Add to Order', 'noorjahan-movie-theater' ); ?></button>
+            <div style="font-size: 1.5rem; font-weight: 900; color: var(--ifs-cinema-brand-amber); font-family: var(--ifs-cinema-font-mono);">BDT 800</div>
           </div>
         </div>
       </div>

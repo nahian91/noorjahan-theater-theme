@@ -1,11 +1,40 @@
 <?php
 /**
  * Template Name: Confirmation / Thanks Page
+ * Description: Dynamically renders the confirmed booking details and digital pass after checkout.
  *
  * @package Noorjahan_Movie_Theater
  */
 
-get_header(); ?>
+get_header();
+
+global $wpdb;
+$table_bookings = $wpdb->prefix . 'bsc_bookings';
+
+// Capture parameters passed via URL query string from checkout redirection
+$token = isset( $_GET['token'] ) ? sanitize_text_field( $_GET['token'] ) : '';
+
+$booking = null;
+if ( ! empty( $token ) ) {
+    $booking = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_bookings} WHERE booking_token = %s", $token ) );
+}
+
+// Fallback to the absolute latest booking record if no valid token string is present in the URL
+if ( ! $booking ) {
+    $booking = $wpdb->get_row( "SELECT * FROM {$table_bookings} ORDER BY id DESC LIMIT 1" );
+}
+
+// Assign variables dynamically with safe fallback defaults
+$guest_name     = ! empty( $booking->customer_name ) ? $booking->customer_name : ( isset( $_GET['name'] ) ? sanitize_text_field( $_GET['name'] ) : 'Valued Guest' );
+$movie_title    = ! empty( $booking->movie_title ) ? $booking->movie_title : ( isset( $_GET['movie'] ) ? sanitize_text_field( $_GET['movie'] ) : 'Feature Presentation' );
+$auditorium     = ! empty( $booking->auditorium ) ? $booking->auditorium : 'Auditorium 1 (23 Seats)';
+$reserved_seats = ! empty( $booking->seats ) ? $booking->seats : ( isset( $_GET['seats'] ) ? sanitize_text_field( $_GET['seats'] ) : 'A1' );
+$total_amount   = ! empty( $booking->total_amount ) ? number_format( floatval( $booking->total_amount ), 2 ) : ( isset( $_GET['total'] ) ? number_format( floatval( $_GET['total'] ), 2 ) : '525.00' );
+$payment_method = ! empty( $booking->payment_method ) ? $booking->payment_method : 'bKash';
+$booking_token  = ! empty( $booking->booking_token ) ? $booking->booking_token : ( ! empty( $token ) ? $token : '#BSC-9482-TX' );
+$booking_date   = ! empty( $booking->booking_date ) ? date_i18n( 'F j, Y • h:i A', strtotime( $booking->booking_date ) ) : date_i18n( 'F j, Y • h:i A' );
+$currency_symbol = get_option( 'bsc_currency_symbol', 'BDT' );
+?>
 
 <main id="primary" class="site-main">
 
@@ -46,9 +75,9 @@ get_header(); ?>
                  alt="<?php esc_attr_e( 'Movie Poster', 'noorjahan-movie-theater' ); ?>"
                  onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&auto=format&fit=crop&q=75';">
             <div>
-              <h2 style="font-size:1.45rem; color:#fff; font-weight:800; line-height:1.2;"><?php esc_html_e( 'FOOD COMBO (EVIL DEAD BURN)', 'noorjahan-movie-theater' ); ?></h2>
+              <h2 style="font-size:1.45rem; color:#fff; font-weight:800; line-height:1.2;"><?php echo esc_html( $movie_title ); ?></h2>
               <p style="font-size:0.85rem; color:var(--ifs-cinema-brand-amber); font-weight:700; margin-top:4px;">
-                <?php esc_html_e( 'Auditorium 1 • 70ft Curved 4K Laser Screen', 'noorjahan-movie-theater' ); ?>
+                <?php echo esc_html( $auditorium ); ?> • 70ft Curved 4K Laser Screen
               </p>
               <p style="font-size:0.82rem; color:var(--ifs-cinema-text-muted); margin-top:2px;">
                 <?php esc_html_e( 'Audio: Dolby Atmos® 128-Channel Spatial Engine', 'noorjahan-movie-theater' ); ?>
@@ -58,20 +87,20 @@ get_header(); ?>
 
           <div class="ifs-cinema-pass-grid-specs">
             <div class="ifs-cinema-pass-spec-item">
-              <div class="label"><?php esc_html_e( 'Date & Showtime', 'noorjahan-movie-theater' ); ?></div>
-              <div class="value"><?php esc_html_e( 'Today • 06:00 PM', 'noorjahan-movie-theater' ); ?></div>
+              <div class="label"><?php esc_html_e( 'Booking Timestamp', 'noorjahan-movie-theater' ); ?></div>
+              <div class="value"><?php echo esc_html( $booking_date ); ?></div>
             </div>
             <div class="ifs-cinema-pass-spec-item">
               <div class="label"><?php esc_html_e( 'Reserved Seats', 'noorjahan-movie-theater' ); ?></div>
-              <div class="value amber"><?php esc_html_e( 'F4, F5 (VIP Recliner)', 'noorjahan-movie-theater' ); ?></div>
+              <div class="value amber"><?php echo esc_html( $reserved_seats ); ?></div>
             </div>
             <div class="ifs-cinema-pass-spec-item">
               <div class="label"><?php esc_html_e( 'Guest Name', 'noorjahan-movie-theater' ); ?></div>
-              <div class="value"><?php esc_html_e( 'Mahfuzur Rahman', 'noorjahan-movie-theater' ); ?></div>
+              <div class="value"><?php echo esc_html( $guest_name ); ?></div>
             </div>
             <div class="ifs-cinema-pass-spec-item">
               <div class="label"><?php esc_html_e( 'Payment Method & Total', 'noorjahan-movie-theater' ); ?></div>
-              <div class="value"><?php esc_html_e( 'bKash • BDT 1,050.00', 'noorjahan-movie-theater' ); ?></div>
+              <div class="value"><?php echo esc_html( $payment_method . ' • ' . $currency_symbol . ' ' . $total_amount ); ?></div>
             </div>
           </div>
 
@@ -110,7 +139,7 @@ get_header(); ?>
           <div class="ifs-cinema-qr-mock-matrix"></div>
         </div>
 
-        <div class="ifs-cinema-token-tag">#BSC-9482-TX</div>
+        <div class="ifs-cinema-token-tag"><?php echo esc_html( $booking_token ); ?></div>
         <p style="font-size:0.78rem; color:var(--ifs-cinema-text-secondary); line-height:1.5;">
           <?php esc_html_e( 'An SMS confirmation has been dispatched to your mobile number. Show this QR pass at the entrance scanner.', 'noorjahan-movie-theater' ); ?>
         </p>

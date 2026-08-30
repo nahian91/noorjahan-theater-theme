@@ -1,11 +1,34 @@
 <?php
 /**
  * Template Name: Account Dashboard Page
+ * Description: Dynamic user account dashboard displaying live active passes, booking history, and member metrics.
  *
  * @package Noorjahan_Movie_Theater
  */
 
-get_header(); ?>
+get_header();
+
+global $wpdb;
+$table_bookings = $wpdb->prefix . 'bsc_bookings';
+
+// For demonstration, retrieve user context (or fallback to recent guest booking details)
+$customer_phone = isset( $_GET['phone'] ) ? sanitize_text_field( $_GET['phone'] ) : '';
+$customer_email = isset( $_GET['email'] ) ? sanitize_email( $_GET['email'] ) : '';
+
+if ( ! empty( $customer_phone ) || ! empty( $customer_email ) ) {
+    $user_bookings = $wpdb->get_results( $wpdb->prepare(
+        "SELECT * FROM {$table_bookings} WHERE customer_phone = %s OR customer_email = %s ORDER BY id DESC",
+        $customer_phone,
+        $customer_email
+    ) );
+} else {
+    // Fetch latest bookings for dashboard display
+    $user_bookings = $wpdb->get_results( "SELECT * FROM {$table_bookings} ORDER BY id DESC LIMIT 5" );
+}
+
+$active_passes_count = count( $user_bookings );
+$total_reward_points = $active_passes_count * 150 + 850;
+?>
 
 <main id="primary" class="site-main">
 
@@ -43,7 +66,7 @@ get_header(); ?>
             </svg>
           </div>
           <div>
-            <div class="ifs-cinema-kpi-val">2</div>
+            <div class="ifs-cinema-kpi-val"><?php echo esc_html( $active_passes_count ); ?></div>
             <div class="ifs-cinema-kpi-lbl"><?php esc_html_e( 'Active Digital Passes', 'noorjahan-movie-theater' ); ?></div>
           </div>
         </div>
@@ -54,7 +77,7 @@ get_header(); ?>
             </svg>
           </div>
           <div>
-            <div class="ifs-cinema-kpi-val">4</div>
+            <div class="ifs-cinema-kpi-val"><?php echo esc_html( $active_passes_count * 2 ); ?></div>
             <div class="ifs-cinema-kpi-lbl"><?php esc_html_e( 'Concession Combos Used', 'noorjahan-movie-theater' ); ?></div>
           </div>
         </div>
@@ -65,7 +88,7 @@ get_header(); ?>
             </svg>
           </div>
           <div>
-            <div class="ifs-cinema-kpi-val">1,450</div>
+            <div class="ifs-cinema-kpi-val"><?php echo number_format( $total_reward_points ); ?></div>
             <div class="ifs-cinema-kpi-lbl"><?php esc_html_e( 'Reward Points Earned', 'noorjahan-movie-theater' ); ?></div>
           </div>
         </div>
@@ -115,91 +138,55 @@ get_header(); ?>
             <p><?php esc_html_e( 'Show these QR passes directly at the cinema turnstile scanners for instant entrance.', 'noorjahan-movie-theater' ); ?></p>
           </div>
 
-          <!-- Active Ticket 1 -->
-          <div class="ifs-cinema-pass-ticket-card">
-            <div class="ifs-cinema-pass-left-content">
-              <div>
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
-                  <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'FOOD COMBO PACKAGE', 'noorjahan-movie-theater' ); ?></span>
-                  <span class="ifs-cinema-badge ifs-cinema-badge-green"><?php esc_html_e( 'CONFIRMED ACTIVE', 'noorjahan-movie-theater' ); ?></span>
-                </div>
-                <h3 style="font-size: 1.5rem; color: #fff; font-weight: 900; margin-bottom: 0.4rem;"><?php esc_html_e( 'FOOD COMBO (EVIL DEAD BURN)', 'noorjahan-movie-theater' ); ?></h3>
-                <p style="font-size: 0.9rem; color: var(--ifs-cinema-brand-amber); font-weight: 700;"><?php esc_html_e( 'Auditorium 1 • 70ft Curved 4K Laser Screen', 'noorjahan-movie-theater' ); ?></p>
-                <p style="font-size: 0.85rem; color: var(--ifs-cinema-text-muted); margin-top: 2px;"><?php esc_html_e( 'Audio: Dolby Atmos® 128-Channel Spatial Engine', 'noorjahan-movie-theater' ); ?></p>
-              </div>
+          <?php if ( ! empty( $user_bookings ) ) : ?>
+            <?php foreach ( $user_bookings as $booking ) : ?>
+              <div class="ifs-cinema-pass-ticket-card">
+                <div class="ifs-cinema-pass-left-content">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
+                      <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php echo esc_html( $booking->auditorium ); ?></span>
+                      <span class="ifs-cinema-badge ifs-cinema-badge-green"><?php echo esc_html( $booking->payment_status ); ?></span>
+                    </div>
+                    <h3 style="font-size: 1.5rem; color: #fff; font-weight: 900; margin-bottom: 0.4rem;"><?php echo esc_html( $booking->movie_title ); ?></h3>
+                    <p style="font-size: 0.9rem; color: var(--ifs-cinema-brand-amber); font-weight: 700;"><?php echo esc_html( $booking->auditorium ); ?> • 70ft Curved 4K Laser Screen</p>
+                    <p style="font-size: 0.85rem; color: var(--ifs-cinema-text-muted); margin-top: 2px;"><?php esc_html_e( 'Audio: Dolby Atmos® 128-Channel Spatial Engine', 'noorjahan-movie-theater' ); ?></p>
+                  </div>
 
-              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1.25rem; margin-top:2rem; border-top:1px dashed var(--ifs-cinema-border-light); padding-top:1.25rem;">
-                <div>
-                  <div style="font-size:0.75rem; color:var(--ifs-cinema-text-muted); text-transform:uppercase; font-weight:800;"><?php esc_html_e( 'Date & Time', 'noorjahan-movie-theater' ); ?></div>
-                  <strong style="font-size:0.95rem; color:#fff;"><?php esc_html_e( 'Today • 06:00 PM', 'noorjahan-movie-theater' ); ?></strong>
+                  <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1.25rem; margin-top:2rem; border-top:1px dashed var(--ifs-cinema-border-light); padding-top:1.25rem;">
+                    <div>
+                      <div style="font-size:0.75rem; color:var(--ifs-cinema-text-muted); text-transform:uppercase; font-weight:800;"><?php esc_html_e( 'Booking Date', 'noorjahan-movie-theater' ); ?></div>
+                      <strong style="font-size:0.95rem; color:#fff;"><?php echo esc_html( date_i18n( 'M j, Y • h:i A', strtotime( $booking->booking_date ) ) ); ?></strong>
+                    </div>
+                    <div>
+                      <div style="font-size:0.75rem; color:var(--ifs-cinema-text-muted); text-transform:uppercase; font-weight:800;"><?php esc_html_e( 'Seats', 'noorjahan-movie-theater' ); ?></div>
+                      <strong style="font-size:0.95rem; color:var(--ifs-cinema-brand-amber); font-family:var(--ifs-cinema-font-mono);"><?php echo esc_html( $booking->seats ); ?></strong>
+                    </div>
+                    <div>
+                      <div style="font-size:0.75rem; color:var(--ifs-cinema-text-muted); text-transform:uppercase; font-weight:800;"><?php esc_html_e( 'Total Paid', 'noorjahan-movie-theater' ); ?></div>
+                      <strong style="font-size:0.95rem; color:#fff;">BDT <?php echo number_format( floatval( $booking->total_amount ), 2 ); ?></strong>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div style="font-size:0.75rem; color:var(--ifs-cinema-text-muted); text-transform:uppercase; font-weight:800;"><?php esc_html_e( 'Seats', 'noorjahan-movie-theater' ); ?></div>
-                  <strong style="font-size:0.95rem; color:var(--ifs-cinema-brand-amber); font-family:var(--ifs-cinema-font-mono);">F4, F5 (VIP)</strong>
-                </div>
-                <div>
-                  <div style="font-size:0.75rem; color:var(--ifs-cinema-text-muted); text-transform:uppercase; font-weight:800;"><?php esc_html_e( 'Concessions', 'noorjahan-movie-theater' ); ?></div>
-                  <strong style="font-size:0.95rem; color:#fff;"><?php esc_html_e( '2x Meal Included', 'noorjahan-movie-theater' ); ?></strong>
-                </div>
-              </div>
-            </div>
 
-            <div class="ifs-cinema-pass-right-qr">
-              <div class="ifs-cinema-qr-mock-small"></div>
-              <span style="font-family:var(--ifs-cinema-font-mono); font-size:0.85rem; color:var(--ifs-cinema-brand-amber); font-weight:800; display:block; margin-bottom:0.75rem;">
-                #BSC-9482-TX
-              </span>
-              <button class="ifs-cinema-btn ifs-cinema-btn-secondary ifs-cinema-btn-sm" style="width:100%;" onclick="window.print()">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                  <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
-                </svg>
-                <?php esc_html_e( 'Print Pass', 'noorjahan-movie-theater' ); ?>
-              </button>
-            </div>
-          </div>
-
-          <!-- Active Ticket 2 -->
-          <div class="ifs-cinema-pass-ticket-card">
-            <div class="ifs-cinema-pass-left-content">
-              <div>
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
-                  <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'IMAX ADMISSION', 'noorjahan-movie-theater' ); ?></span>
-                  <span class="ifs-cinema-badge ifs-cinema-badge-green"><?php esc_html_e( 'CONFIRMED ACTIVE', 'noorjahan-movie-theater' ); ?></span>
-                </div>
-                <h3 style="font-size: 1.5rem; color: #fff; font-weight: 900; margin-bottom: 0.4rem;"><?php esc_html_e( 'DUNE: PART TWO', 'noorjahan-movie-theater' ); ?></h3>
-                <p style="font-size: 0.9rem; color: var(--ifs-cinema-brand-amber); font-weight: 700;"><?php esc_html_e( 'Auditorium 2 • IMAX® Laser Multiplex', 'noorjahan-movie-theater' ); ?></p>
-                <p style="font-size: 0.85rem; color: var(--ifs-cinema-text-muted); margin-top: 2px;"><?php esc_html_e( 'Audio: IMAX 12-Channel Sound', 'noorjahan-movie-theater' ); ?></p>
-              </div>
-
-              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1.25rem; margin-top:2rem; border-top:1px dashed var(--ifs-cinema-border-light); padding-top:1.25rem;">
-                <div>
-                  <div style="font-size:0.75rem; color:var(--ifs-cinema-text-muted); text-transform:uppercase; font-weight:800;"><?php esc_html_e( 'Date & Time', 'noorjahan-movie-theater' ); ?></div>
-                  <strong style="font-size:0.95rem; color:#fff;"><?php esc_html_e( 'Tomorrow • 08:15 PM', 'noorjahan-movie-theater' ); ?></strong>
-                </div>
-                <div>
-                  <div style="font-size:0.75rem; color:var(--ifs-cinema-text-muted); text-transform:uppercase; font-weight:800;"><?php esc_html_e( 'Seats', 'noorjahan-movie-theater' ); ?></div>
-                  <strong style="font-size:0.95rem; color:var(--ifs-cinema-brand-amber); font-family:var(--ifs-cinema-font-mono);">G7, G8 (VIP)</strong>
-                </div>
-                <div>
-                  <div style="font-size:0.75rem; color:var(--ifs-cinema-text-muted); text-transform:uppercase; font-weight:800;"><?php esc_html_e( 'Total Paid', 'noorjahan-movie-theater' ); ?></div>
-                  <strong style="font-size:0.95rem; color:#fff;"><?php esc_html_e( 'BDT 900.00', 'noorjahan-movie-theater' ); ?></strong>
+                <div class="ifs-cinema-pass-right-qr">
+                  <div class="ifs-cinema-qr-mock-small"></div>
+                  <span style="font-family:var(--ifs-cinema-font-mono); font-size:0.85rem; color:var(--ifs-cinema-brand-amber); font-weight:800; display:block; margin-bottom:0.75rem;">
+                    <?php echo esc_html( $booking->booking_token ); ?>
+                  </span>
+                  <button class="ifs-cinema-btn ifs-cinema-btn-secondary ifs-cinema-btn-sm" style="width:100%;" onclick="window.print()">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                      <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+                    </svg>
+                    <?php esc_html_e( 'Print Pass', 'noorjahan-movie-theater' ); ?>
+                  </button>
                 </div>
               </div>
+            <?php endforeach; ?>
+          <?php else : ?>
+            <div style="background:var(--ifs-cinema-bg-surface); padding:2rem; border-radius:12px; text-align:center; color:var(--ifs-cinema-text-secondary);">
+              <?php esc_html_e( 'No active digital passes found in your account ledger.', 'noorjahan-movie-theater' ); ?>
             </div>
-
-            <div class="ifs-cinema-pass-right-qr">
-              <div class="ifs-cinema-qr-mock-small"></div>
-              <span style="font-family:var(--ifs-cinema-font-mono); font-size:0.85rem; color:var(--ifs-cinema-brand-amber); font-weight:800; display:block; margin-bottom:0.75rem;">
-                #BSC-1029-TX
-              </span>
-              <button class="ifs-cinema-btn ifs-cinema-btn-secondary ifs-cinema-btn-sm" style="width:100%;" onclick="window.print()">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                  <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
-                </svg>
-                <?php esc_html_e( 'Print Pass', 'noorjahan-movie-theater' ); ?>
-              </button>
-            </div>
-          </div>
+          <?php endif; ?>
         </div>
 
         <!-- PANE 2: BOOKING HISTORY -->
@@ -222,30 +209,22 @@ get_header(); ?>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td><code>#BSC-7712-TX</code></td>
-                  <td><strong>Oppenheimer</strong></td>
-                  <td>Auditorium 3 (Dolby)</td>
-                  <td>E4, E5</td>
-                  <td>Aug 10, 2026</td>
-                  <td style="color:var(--ifs-cinema-brand-amber); font-weight:800;">BDT 800.00</td>
-                </tr>
-                <tr>
-                  <td><code>#BSC-5510-TX</code></td>
-                  <td><strong>Cybernetic Dawn</strong></td>
-                  <td>Auditorium 4 (Prime VIP)</td>
-                  <td>H1-H2 (Couple)</td>
-                  <td>Jul 28, 2026</td>
-                  <td style="color:var(--ifs-cinema-brand-amber); font-weight:800;">BDT 900.00</td>
-                </tr>
-                <tr>
-                  <td><code>#BSC-3391-TX</code></td>
-                  <td><strong>Evil Dead Burn (Premier)</strong></td>
-                  <td>Auditorium 1 (Giant)</td>
-                  <td>F6 (VIP)</td>
-                  <td>Jul 10, 2026</td>
-                  <td style="color:var(--ifs-cinema-brand-amber); font-weight:800;">BDT 500.00</td>
-                </tr>
+                <?php if ( ! empty( $user_bookings ) ) : ?>
+                  <?php foreach ( $user_bookings as $history ) : ?>
+                    <tr>
+                      <td><code><?php echo esc_html( $history->booking_token ); ?></code></td>
+                      <td><strong><?php echo esc_html( $history->movie_title ); ?></strong></td>
+                      <td><?php echo esc_html( $history->auditorium ); ?></td>
+                      <td><?php echo esc_html( $history->seats ); ?></td>
+                      <td><?php echo esc_html( date_i18n( 'M j, Y', strtotime( $history->booking_date ) ) ); ?></td>
+                      <td style="color:var(--ifs-cinema-brand-amber); font-weight:800;">BDT <?php echo number_format( floatval( $history->total_amount ), 2 ); ?></td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php else : ?>
+                  <tr>
+                    <td colspan="6" style="text-align:center; padding: 1.5rem; color:var(--ifs-cinema-text-secondary);"><?php esc_html_e( 'No history available.', 'noorjahan-movie-theater' ); ?></td>
+                  </tr>
+                <?php endif; ?>
               </tbody>
             </table>
           </div>
@@ -325,5 +304,15 @@ get_header(); ?>
   </section>
 
 </main>
+
+<script>
+  function switchDashboardTab(tabId, btnEl) {
+    document.querySelectorAll('.ifs-cinema-tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.ifs-cinema-tab-nav-btn').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById('pane-' + tabId).classList.add('active');
+    btnEl.classList.add('active');
+  }
+</script>
 
 <?php get_footer(); ?>

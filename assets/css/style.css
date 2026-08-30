@@ -396,12 +396,12 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 .ifs-cinema-hero-title {
-  font-size: 4.2rem;
-  font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -2px;
-  margin: 0.5rem 0 1.25rem;
-  color: #ffffff;
+	font-size: 50px;
+	font-weight: 900;
+	line-height: 1.5;
+	letter-spacing: -2px;
+	margin: 0.5rem 0 1.25rem;
+	color: #ffffff;
 }
 
 .ifs-cinema-hero-specs-hud,
