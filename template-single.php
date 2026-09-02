@@ -1,7 +1,7 @@
 <?php
 /**
  * Template Name: Single Movie Details
- * Description: Dynamic Single Movie Details, Sidebar Showtime Selectors, Auto-Redirect Login Gate, and Seating Matrix template with dynamic pricing tiers.
+ * Description: Dynamic Single Movie Details, Hierarchical Schedule (Days & Time Slots) with Live Seat Availability, Interactive Sidebar Dropdowns, Auto-Redirect Login Gate, and Real-Time Reactive Seating Matrix template.
  *
  * @package Noorjahan_Movie_Theater
  */
@@ -31,35 +31,134 @@ $age_rating        = ! empty( $movie->age_rating ) ? esc_html( $movie->age_ratin
 $duration          = ! empty( $movie->duration ) ? esc_html( $movie->duration ) : '01 Hours 50 Minutes';
 $genre             = ! empty( $movie->genre ) ? esc_html( $movie->genre ) : 'Horror / Supernatural Thriller';
 $audio_language    = ! empty( $movie->audio_language ) ? esc_html( $movie->audio_language ) : 'English (Dolby Atmos® 128-Ch)';
-$auditorium        = ! empty( $movie->auditorium ) ? esc_html( $movie->auditorium ) : 'Auditorium 1 (23 Seats)';
-$showtimes_raw     = ! empty( $movie->showtimes ) ? $movie->showtimes : '["18:00"]';
+$showtimes_raw     = ! empty( $movie->showtimes ) ? $movie->showtimes : '';
 $badge_tag         = ! empty( $movie->badge_tag ) ? esc_html( $movie->badge_tag ) : '4K DUAL LASER';
 $director          = ! empty( $movie->director ) ? esc_html( $movie->director ) : 'Darren Aron';
 $writers           = ! empty( $movie->writers ) ? esc_html( $movie->writers ) : 'Sam Raimi, James Wan';
 $short_description = ! empty( $movie->short_description ) ? esc_html( $movie->short_description ) : 'Experience our signature dine-in package with chef-prepared refreshments and premium seating.';
 $synopsis          = ! empty( $movie->synopsis ) ? wp_kses_post( $movie->synopsis ) : 'A secluded mountain sanctuary turns into a fiery gauntlet when an ancient relic is unearthed during a solar alignment.';
 
-// Parse screening dates
-$release_dates_array = array( current_time( 'Y-m-d' ) );
+// Parse official theatrical release date
+$official_release_date_str = '--';
 if ( ! empty( $movie->release_date ) ) {
-    $decoded_dates = json_decode( $movie->release_date, true );
-    if ( is_array( $decoded_dates ) ) {
-        $release_dates_array = $decoded_dates;
-    } else {
-        $release_dates_array = array_map( 'trim', explode( ',', $movie->release_date ) );
+    $decoded_rd = json_decode( $movie->release_date, true );
+    $raw_rd     = ( is_array( $decoded_rd ) && ! empty( $decoded_rd[0] ) ) ? $decoded_rd[0] : $movie->release_date;
+    $ts_rd      = strtotime( $raw_rd );
+    $official_release_date_str = $ts_rd ? date_i18n( 'd F Y', $ts_rd ) : esc_html( $raw_rd );
+}
+
+// Current local timestamp & date
+$current_timestamp = current_time( 'timestamp' );
+$today_str         = date( 'Y-m-d', $current_timestamp );
+
+// Parse hierarchical screening schedule (Days & Time slots)
+$day_schedules = array();
+if ( ! empty( $showtimes_raw ) ) {
+    $decoded_s = json_decode( $showtimes_raw, true );
+    if ( is_array( $decoded_s ) && ! empty( $decoded_s ) ) {
+        if ( isset( $decoded_s[0]['date'] ) && isset( $decoded_s[0]['times'] ) ) {
+            $day_schedules = $decoded_s;
+        } elseif ( isset( $decoded_s[0]['date'] ) && isset( $decoded_s[0]['time'] ) ) {
+            $grouped = array();
+            foreach ( $decoded_s as $item ) {
+                $d = $item['date'] ?? $today_str;
+                $t = $item['time'] ?? '18:00';
+                if ( ! isset( $grouped[ $d ] ) ) {
+                    $grouped[ $d ] = array( 'date' => $d, 'times' => array() );
+                }
+                $grouped[ $d ]['times'][] = $t;
+            }
+            $day_schedules = array_values( $grouped );
+        } else {
+            $day_schedules = array(
+                array(
+                    'date'  => $today_str,
+                    'times' => is_array( $decoded_s ) ? $decoded_s : array( '18:00' )
+                )
+            );
+        }
     }
 }
 
-// Parse showtimes into array
-$showtimes_array = array( '6:00 PM' );
-if ( ! empty( $showtimes_raw ) ) {
-    $decoded_times = json_decode( $showtimes_raw, true );
-    if ( is_array( $decoded_times ) ) {
-        $showtimes_array = $decoded_times;
-    } else {
-        $showtimes_array = array_map( 'trim', explode( ',', $showtimes_raw ) );
+// Fallback to today's schedule if empty
+if ( empty( $day_schedules ) ) {
+    $day_schedules = array(
+        array(
+            'date'  => $today_str,
+            'times' => array( '18:00' )
+        )
+    );
+}
+
+// Pre-calculate per-slot booked seats map & total occupied seat array
+$slot_booked_seats_map = array();
+$slot_booked_counts    = array();
+
+if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_bookings}'" ) === $table_bookings ) {
+    $all_movie_bookings = $wpdb->get_results( $wpdb->prepare(
+        "SELECT booking_date, showtime, seats FROM {$table_bookings} WHERE movie_title = %s",
+        $title
+    ) );
+    if ( ! empty( $all_movie_bookings ) ) {
+        foreach ( $all_movie_bookings as $b_row ) {
+            $b_date  = date( 'Y-m-d', strtotime( $b_row->booking_date ) );
+            $b_time  = trim( $b_row->showtime );
+            $b_seats = explode( ',', $b_row->seats );
+            $slot_key = $b_date . '_' . $b_time;
+
+            if ( ! isset( $slot_booked_seats_map[ $slot_key ] ) ) {
+                $slot_booked_seats_map[ $slot_key ] = array();
+            }
+
+            foreach ( $b_seats as $st ) {
+                $trimmed_st = trim( $st );
+                if ( ! empty( $trimmed_st ) ) {
+                    $slot_booked_seats_map[ $slot_key ][] = $trimmed_st;
+                }
+            }
+        }
+
+        // Clean unique seats per slot
+        foreach ( $slot_booked_seats_map as $s_key => $s_list ) {
+            $unique_seats = array_values( array_unique( $s_list ) );
+            $slot_booked_seats_map[ $s_key ] = $unique_seats;
+            $slot_booked_counts[ $s_key ]    = count( $unique_seats );
+        }
     }
 }
+
+// Find default active future slot
+$initial_selected_date = '';
+$initial_selected_time = '';
+
+foreach ( $day_schedules as $day_slot ) {
+    $d_val = $day_slot['date'];
+    foreach ( (array) $day_slot['times'] as $t_val ) {
+        $clean_t   = trim( $t_val );
+        $slot_ts   = strtotime( $d_val . ' ' . $clean_t );
+        $slot_key  = $d_val . '_' . $clean_t;
+        $booked_ct = $slot_booked_counts[ $slot_key ] ?? 0;
+        
+        $is_passed = ( $d_val === $today_str && $slot_ts < $current_timestamp );
+        $is_full   = ( $booked_ct >= 23 );
+
+        if ( ! $is_passed && ! $is_full ) {
+            $initial_selected_date = $d_val;
+            $initial_selected_time = $clean_t;
+            break 2;
+        }
+    }
+}
+
+// Fallback to first configured day and time if all are past or full
+if ( empty( $initial_selected_date ) ) {
+    $initial_selected_date = $day_schedules[0]['date'] ?? $today_str;
+    $initial_selected_time = $day_schedules[0]['times'][0] ?? '18:00';
+}
+
+// Initial occupied seats for first active slot
+$initial_slot_key       = $initial_selected_date . '_' . $initial_selected_time;
+$initial_occupied_seats = $slot_booked_seats_map[ $initial_slot_key ] ?? array();
 
 // Parse cast and crew roster
 $cast_list = array();
@@ -79,14 +178,26 @@ $pricing_tiers = get_option('bsc_pricing_tiers', array(
     array('title' => 'VIP Motorized Recliner', 'amount' => '500', 'description' => 'Applied across premium Row A.')
 ));
 
-// Fallback prices for JS calculations
+// Fallback prices for JS calculations and determine lowest price dynamically
 $standard_price = 400.00;
-$vip_price = 500.00;
-foreach ($pricing_tiers as $tier) {
-    if (stripos($tier['title'], 'vip') !== false) {
-        $vip_price = floatval($tier['amount']);
-    } else {
-        $standard_price = floatval($tier['amount']);
+$vip_price      = 500.00;
+$lowest_price   = 400.00;
+
+if ( ! empty( $pricing_tiers ) && is_array( $pricing_tiers ) ) {
+    $tier_amounts = array();
+    foreach ( $pricing_tiers as $tier ) {
+        $amount_num = isset( $tier['amount'] ) ? floatval( $tier['amount'] ) : 0;
+        if ( $amount_num > 0 ) {
+            $tier_amounts[] = $amount_num;
+        }
+        if ( stripos( $tier['title'], 'vip' ) !== false ) {
+            $vip_price = $amount_num;
+        } else {
+            $standard_price = $amount_num;
+        }
+    }
+    if ( ! empty( $tier_amounts ) ) {
+        $lowest_price = min( $tier_amounts );
     }
 }
 
@@ -103,25 +214,6 @@ if ( ! empty( $_SERVER['QUERY_STRING'] ) ) {
 }
 $login_url      = wp_login_url( $current_page_url );
 $is_user_logged = is_user_logged_in();
-
-// Retrieve Occupied Seats for this movie
-$occupied_seats = array();
-$booked_raw = $wpdb->get_col( $wpdb->prepare(
-    "SELECT seats FROM {$table_bookings} WHERE movie_title = %s",
-    $title
-) );
-if ( ! empty( $booked_raw ) ) {
-    foreach ( $booked_raw as $s_str ) {
-        $parts = explode( ',', $s_str );
-        foreach ( $parts as $p ) {
-            $trimmed = trim( $p );
-            if ( ! empty( $trimmed ) ) {
-                $occupied_seats[] = $trimmed;
-            }
-        }
-    }
-}
-$occupied_seats = array_unique( $occupied_seats );
 ?>
 
 <style>
@@ -298,7 +390,7 @@ $occupied_seats = array_unique( $occupied_seats );
     grid-template-columns: 1fr 340px;
     gap: 2rem;
     box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-    margin-bottom: 3.5rem;
+    margin-bottom: 2.5rem;
   }
 
   .ifs-cinema-seating-arena {
@@ -440,27 +532,28 @@ $occupied_seats = array_unique( $occupied_seats );
     margin-bottom: 0.5rem;
   }
 
+  /* Columnar Legend */
   .ifs-cinema-legend {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1.25rem;
-    justify-content: center;
+    flex-direction: column;
+    gap: 0.65rem;
     padding-top: 1.25rem;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     color: var(--ifs-cinema-text-secondary);
   }
 
   .ifs-cinema-legend-item {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.65rem;
   }
 
   .ifs-cinema-legend-bullet {
     width: 14px;
     height: 14px;
     border-radius: 4px;
+    flex-shrink: 0;
   }
 
   /* Checkout Summary Sidebar */
@@ -479,14 +572,6 @@ $occupied_seats = array_unique( $occupied_seats );
     font-size: 1.15rem;
     font-weight: 900;
     color: #fff;
-  }
-
-  .ifs-cinema-hall-tag {
-    font-size: 0.75rem;
-    color: var(--ifs-cinema-brand-teal);
-    font-weight: 700;
-    display: block;
-    margin-bottom: 1.25rem;
   }
 
   .ifs-cinema-chips-wrapper {
@@ -510,6 +595,63 @@ $occupied_seats = array_unique( $occupied_seats );
     padding: 0.2rem 0.5rem;
     border-radius: 4px;
     font-family: var(--ifs-cinema-font-mono);
+  }
+
+  /* Screening Schedule Table Section */
+  .ifs-cinema-schedule-section {
+    background: #060d10;
+    border: 1px solid var(--ifs-cinema-border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 4rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  }
+
+  .ifs-cinema-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .ifs-cinema-schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.9rem;
+  }
+
+  .ifs-cinema-schedule-table th {
+    background: #0f232b;
+    color: var(--ifs-cinema-text-muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--ifs-cinema-border);
+  }
+
+  .ifs-cinema-schedule-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--ifs-cinema-border-light);
+    color: var(--ifs-cinema-text-primary);
+    vertical-align: middle;
+  }
+
+  .ifs-cinema-schedule-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .ifs-cinema-schedule-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  /* Disabled Slot Styling */
+  .ifs-slot-btn-disabled {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #475569 !important;
+    cursor: not-allowed !important;
+    opacity: 0.45;
   }
 
   /* Content Cards Section */
@@ -595,7 +737,6 @@ $occupied_seats = array_unique( $occupied_seats );
       <!-- Specs & Overview -->
       <div>
         <div style="display:flex; gap:0.65rem; margin-bottom:1.25rem;">
-          <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php echo strtoupper( esc_html( $auditorium ) ); ?></span>
           <span class="ifs-cinema-badge ifs-cinema-badge-imax"><?php echo esc_html( $badge_tag ); ?></span>
         </div>
 
@@ -629,14 +770,14 @@ $occupied_seats = array_unique( $occupied_seats );
             <div class="val"><?php echo $writers; ?></div>
           </div>
           <div class="ifs-cinema-credit-box">
-            <div class="key"><?php esc_html_e( 'Screening Dates', 'noorjahan-movie-theater' ); ?></div>
-            <div class="val"><?php echo implode(', ', $release_dates_array); ?></div>
+            <div class="key"><?php esc_html_e( 'Release Date', 'noorjahan-movie-theater' ); ?></div>
+            <div class="val"><?php echo esc_html( $official_release_date_str ); ?></div>
           </div>
         </div>
 
         <div style="display:flex; gap:1.25rem; align-items:center;">
           <button type="button" class="ifs-cinema-btn ifs-cinema-btn-amber" onclick="document.getElementById('seatSelectorSection').scrollIntoView({behavior:'smooth'})">
-            <?php echo sprintf( esc_html__( 'Choose Seats Below (From %s %s)', 'noorjahan-movie-theater' ), esc_html( $currency_symbol ), number_format( $standard_price, 0 ) ); ?>
+            <?php echo sprintf( esc_html__( 'Choose Seats Below (From %s %s)', 'noorjahan-movie-theater' ), esc_html( $currency_symbol ), number_format( $lowest_price, 0 ) ); ?>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
               <path d="M13 5v11.86l5.43-5.43 1.42 1.42L12 21.14l-7.85-8.29 1.42-1.42L11 16.86V5h2z"/>
             </svg>
@@ -659,7 +800,7 @@ $occupied_seats = array_unique( $occupied_seats );
   <section class="ifs-cinema-container ifs-cinema-inline-seat-section" id="seatSelectorSection" style="padding-top: 3.5rem;">
     
     <div style="margin-bottom: 2rem; text-align: center;">
-      <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php echo strtoupper( esc_html( $auditorium ) ); ?></span>
+      <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'Interactive Hall Seating', 'noorjahan-movie-theater' ); ?></span>
       <h2 style="font-size: 2.2rem; font-weight: 900; margin-top: 0.5rem; color:#fff;"><?php esc_html_e( 'Cinema Hall Seat Map', 'noorjahan-movie-theater' ); ?></h2>
     </div>
 
@@ -679,11 +820,13 @@ $occupied_seats = array_unique( $occupied_seats );
             <div class="ifs-cinema-seat-column vip-col">
               <div class="ifs-cinema-column-seats">
                 <?php foreach ( array('A1', 'A2', 'A3', 'A4', 'A5') as $seat_id ) : 
-                  $is_taken = in_array( $seat_id, $occupied_seats );
+                  $is_taken = in_array( $seat_id, $initial_occupied_seats );
                 ?>
                   <button type="button" 
                           class="ifs-cinema-seat-box vip <?php echo $is_taken ? 'occupied' : ''; ?>" 
                           id="seat-<?php echo esc_attr( $seat_id ); ?>" 
+                          data-seat-id="<?php echo esc_attr( $seat_id ); ?>"
+                          data-seat-type="vip"
                           <?php echo $is_taken ? 'disabled' : ''; ?>
                           onclick="toggleSeat('<?php echo esc_attr( $seat_id ); ?>', this, 'vip')" 
                           aria-label="Seat <?php echo esc_attr( $seat_id ); ?> VIP <?php echo $is_taken ? 'Occupied' : ''; ?>">
@@ -704,11 +847,13 @@ $occupied_seats = array_unique( $occupied_seats );
             <div class="ifs-cinema-seat-column standard-col">
               <div class="ifs-cinema-column-seats">
                 <?php foreach ( array('B1', 'B2', 'B3', 'B4', 'B5', 'B6') as $seat_id ) : 
-                  $is_taken = in_array( $seat_id, $occupied_seats );
+                  $is_taken = in_array( $seat_id, $initial_occupied_seats );
                 ?>
                   <button type="button" 
                           class="ifs-cinema-seat-box standard <?php echo $is_taken ? 'occupied' : ''; ?>" 
                           id="seat-<?php echo esc_attr( $seat_id ); ?>" 
+                          data-seat-id="<?php echo esc_attr( $seat_id ); ?>"
+                          data-seat-type="standard"
                           <?php echo $is_taken ? 'disabled' : ''; ?>
                           onclick="toggleSeat('<?php echo esc_attr( $seat_id ); ?>', this, 'standard')" 
                           aria-label="Seat <?php echo esc_attr( $seat_id ); ?> Standard <?php echo $is_taken ? 'Occupied' : ''; ?>">
@@ -728,11 +873,13 @@ $occupied_seats = array_unique( $occupied_seats );
             <div class="ifs-cinema-seat-column standard-col">
               <div class="ifs-cinema-column-seats">
                 <?php foreach ( array('C1', 'C2', 'C3', 'C4', 'C5', 'C6') as $seat_id ) : 
-                  $is_taken = in_array( $seat_id, $occupied_seats );
+                  $is_taken = in_array( $seat_id, $initial_occupied_seats );
                 ?>
                   <button type="button" 
                           class="ifs-cinema-seat-box standard <?php echo $is_taken ? 'occupied' : ''; ?>" 
                           id="seat-<?php echo esc_attr( $seat_id ); ?>" 
+                          data-seat-id="<?php echo esc_attr( $seat_id ); ?>"
+                          data-seat-type="standard"
                           <?php echo $is_taken ? 'disabled' : ''; ?>
                           onclick="toggleSeat('<?php echo esc_attr( $seat_id ); ?>', this, 'standard')" 
                           aria-label="Seat <?php echo esc_attr( $seat_id ); ?> Standard <?php echo $is_taken ? 'Occupied' : ''; ?>">
@@ -752,11 +899,13 @@ $occupied_seats = array_unique( $occupied_seats );
             <div class="ifs-cinema-seat-column standard-col">
               <div class="ifs-cinema-column-seats">
                 <?php foreach ( array('D1', 'D2', 'D3', 'D4', 'D5', 'D6') as $seat_id ) : 
-                  $is_taken = in_array( $seat_id, $occupied_seats );
+                  $is_taken = in_array( $seat_id, $initial_occupied_seats );
                 ?>
                   <button type="button" 
                           class="ifs-cinema-seat-box standard <?php echo $is_taken ? 'occupied' : ''; ?>" 
                           id="seat-<?php echo esc_attr( $seat_id ); ?>" 
+                          data-seat-id="<?php echo esc_attr( $seat_id ); ?>"
+                          data-seat-type="standard"
                           <?php echo $is_taken ? 'disabled' : ''; ?>
                           onclick="toggleSeat('<?php echo esc_attr( $seat_id ); ?>', this, 'standard')" 
                           aria-label="Seat <?php echo esc_attr( $seat_id ); ?> Standard <?php echo $is_taken ? 'Occupied' : ''; ?>">
@@ -780,9 +929,9 @@ $occupied_seats = array_unique( $occupied_seats );
           </div>
         </div>
 
-        <!-- Tiered Legend dynamically reflecting pricing tiers -->
+        <!-- Columnar Tiered Legend -->
         <div class="ifs-cinema-legend">
-          <?php foreach ($pricing_tiers as $index => $tier): 
+          <?php foreach ( $pricing_tiers as $index => $tier ): 
             $bullet_bg = ($index === 0) ? 'var(--ifs-cinema-seat-standard)' : 'var(--ifs-cinema-seat-vip)';
           ?>
             <div class="ifs-cinema-legend-item">
@@ -806,27 +955,34 @@ $occupied_seats = array_unique( $occupied_seats );
         <div>
           <div class="ifs-cinema-movie-meta-summary">
             <h3><?php echo esc_html( $title ); ?></h3>
-            <span class="ifs-cinema-hall-tag"><?php echo esc_html( $auditorium ); ?> • 23 Seats Total</span>
           </div>
 
-          <!-- Screening Date & Showtime Selectors inside Sidebar -->
-          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--ifs-cinema-border); padding: 0.85rem; border-radius: 8px; margin-bottom: 1.25rem;">
-            <div style="margin-bottom: 0.75rem;">
-              <label style="display: block; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--ifs-cinema-text-muted); margin-bottom: 0.25rem;"><?php esc_html_e( 'Screening Date', 'noorjahan-movie-theater' ); ?></label>
-              <select id="screeningDateSelect" style="width: 100%; padding: 0.45rem 0.6rem; background: #070e11; border: 1px solid var(--ifs-cinema-border); border-radius: 6px; color: #fff; font-size: 0.85rem; outline: none;">
-                <?php foreach ( $release_dates_array as $date_val ) : ?>
-                  <option value="<?php echo esc_attr( $date_val ); ?>"><?php echo esc_html( $date_val ); ?></option>
+          <!-- Active Slot Selectors (Interactive Dropdowns) -->
+          <div style="background: rgba(13, 148, 136, 0.08); border: 1px solid rgba(13, 148, 136, 0.25); padding: 0.85rem; border-radius: 10px; margin-bottom: 1.25rem;">
+            <div style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--ifs-cinema-brand-amber); margin-bottom: 0.6rem; display: flex; align-items: center; justify-content: space-between;">
+              <span>Active Booking Slot</span>
+              <span>⚙️ Config</span>
+            </div>
+            
+            <div style="margin-bottom: 0.6rem;">
+              <label style="display: block; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--ifs-cinema-text-muted); margin-bottom: 2px;">Date</label>
+              <select id="selectedScreeningDate" onchange="syncSlotDropdowns(true)" style="width: 100%; padding: 0.35rem 0.5rem; background: #070e11; border: 1px solid var(--ifs-cinema-border); border-radius: 6px; color: #5eead4; font-size: 0.82rem; font-family: var(--ifs-cinema-font-mono); outline: none;">
+                <?php foreach ( $day_schedules as $sched ) : 
+                  $clean_d = trim( $sched['date'] );
+                  $human_d = date_i18n( 'd F Y', strtotime( $clean_d ) );
+                  $day_d   = date_i18n( 'l', strtotime( $clean_d ) );
+                ?>
+                  <option value="<?php echo esc_attr( $clean_d ); ?>" <?php selected( $clean_d, $initial_selected_date ); ?> data-human="<?php echo esc_attr( $human_d ); ?>">
+                    <?php echo esc_html( $human_d . ' (' . $day_d . ')' ); ?>
+                  </option>
                 <?php endforeach; ?>
               </select>
             </div>
+
             <div>
-              <label style="display: block; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--ifs-cinema-text-muted); margin-bottom: 0.25rem;"><?php esc_html_e( 'Screening Time', 'noorjahan-movie-theater' ); ?></label>
-              <select id="screeningTimeSelect" style="width: 100%; padding: 0.45rem 0.6rem; background: #070e11; border: 1px solid var(--ifs-cinema-border); border-radius: 6px; color: #fff; font-size: 0.85rem; outline: none;">
-                <?php foreach ( $showtimes_array as $time_slot ) : 
-                  $formatted_time = (strpos($time_slot, ':') !== false && strlen($time_slot) <= 5) ? date('h:i A', strtotime($time_slot)) : $time_slot;
-                ?>
-                  <option value="<?php echo esc_attr( $time_slot ); ?>"><?php echo esc_html( $formatted_time ); ?></option>
-                <?php endforeach; ?>
+              <label style="display: block; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--ifs-cinema-text-muted); margin-bottom: 2px;">Time</label>
+              <select id="selectedScreeningTime" onchange="syncSlotDropdowns(false)" style="width: 100%; padding: 0.35rem 0.5rem; background: #070e11; border: 1px solid var(--ifs-cinema-border); border-radius: 6px; color: #5eead4; font-size: 0.82rem; font-family: var(--ifs-cinema-font-mono); outline: none;">
+                <!-- Populated dynamically via JS syncSlotDropdowns() based on selected Date -->
               </select>
             </div>
           </div>
@@ -879,7 +1035,100 @@ $occupied_seats = array_unique( $occupied_seats );
     </div>
   </section>
 
-  <!-- 03. FULL DETAILS: SYNOPSIS, CAST & TRAILER -->
+  <!-- 03. SCREENING SCHEDULE TABLE SECTION (Hierarchical Day & Shows with Real-Time Seat Availability) -->
+  <section class="ifs-cinema-container ifs-cinema-schedule-section">
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
+      <div>
+        <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'TIMETABLE', 'noorjahan-movie-theater' ); ?></span>
+        <h3 style="font-size: 1.65rem; font-weight: 900; margin-top: 0.35rem; color: #fff;"><?php esc_html_e( 'Screening Dates & Showtimes', 'noorjahan-movie-theater' ); ?></h3>
+      </div>
+      <span style="font-size: 0.8rem; color: var(--cinema-text-muted);"><?php esc_html_e( 'Live seat availability updated in real-time', 'noorjahan-movie-theater' ); ?></span>
+    </div>
+
+    <div class="ifs-cinema-table-wrap">
+      <table class="ifs-cinema-schedule-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th><?php esc_html_e( 'Screening Date', 'noorjahan-movie-theater' ); ?></th>
+            <th><?php esc_html_e( 'Day', 'noorjahan-movie-theater' ); ?></th>
+            <th><?php esc_html_e( 'Available Time Slots', 'noorjahan-movie-theater' ); ?></th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php 
+            $row_index = 1;
+            foreach ( $day_schedules as $day_slot ) :
+              $clean_date = trim( $day_slot['date'] );
+              $human_date = date_i18n( 'd F Y', strtotime( $clean_date ) );
+              $day_name   = date_i18n( 'l', strtotime( $clean_date ) );
+              $is_today   = ( $clean_date === $today_str );
+              $times_arr  = (array)( $day_slot['times'] ?? array('18:00') );
+          ?>
+            <tr>
+              <td style="font-weight: 800; color: var(--ifs-cinema-text-muted); width: 40px;"><?php echo $row_index++; ?></td>
+              <td style="width: 190px;">
+                <strong style="font-size: 0.95rem; color: #fff; font-family: var(--ifs-cinema-font-mono);"><?php echo esc_html( $human_date ); ?></strong>
+                <?php if ( $is_today ) : ?>
+                  <span class="ifs-cinema-badge ifs-cinema-badge-amber" style="font-size: 0.65rem; margin-left: 6px;"><?php esc_html_e( 'TODAY', 'noorjahan-movie-theater' ); ?></span>
+                <?php endif; ?>
+              </td>
+              <td style="width: 130px;">
+                <span style="font-weight: 800; color: var(--ifs-cinema-brand-amber); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.04em;">
+                  <?php echo esc_html( $day_name ); ?>
+                </span>
+              </td>
+              <td>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                  <?php foreach ( $times_arr as $time_item ) : 
+                    $clean_time  = trim( $time_item );
+                    $formatted_t = (strpos($clean_time, ':') !== false && strlen($clean_time) <= 5) ? date('h:i A', strtotime($clean_time)) : $clean_time;
+                    
+                    // Live remaining seats calculation for this exact slot
+                    $slot_key        = $clean_date . '_' . $clean_time;
+                    $booked_count    = $slot_booked_counts[ $slot_key ] ?? 0;
+                    $available_seats = max( 0, 23 - $booked_count );
+                    
+                    // Past timestamp check
+                    $slot_timestamp  = strtotime( $clean_date . ' ' . $clean_time );
+                    $is_passed       = ( $is_today && $slot_timestamp < $current_timestamp );
+                    $is_sold_out     = ( $available_seats <= 0 );
+                    $is_disabled     = ( $is_passed || $is_sold_out );
+                    
+                    // Highlight next slot if active
+                    $is_next_active  = ( $clean_date === $initial_selected_date && $clean_time === $initial_selected_time );
+                  ?>
+                    <button type="button" 
+                            class="button button-small <?php echo $is_disabled ? 'ifs-slot-btn-disabled' : ( $is_next_active ? 'button-primary' : 'ifs-cinema-btn-secondary' ); ?>" 
+                            <?php echo $is_disabled ? 'disabled aria-disabled="true"' : ''; ?>
+                            style="padding: 6px 14px; font-size: 0.8rem; font-weight: 800; cursor: <?php echo $is_disabled ? 'not-allowed' : 'pointer'; ?>; display: inline-flex; align-items: center; gap: 6px; <?php echo $is_next_active ? 'background:var(--ifs-cinema-brand-amber); color:#000; border-color:var(--ifs-cinema-brand-amber);' : ''; ?>" 
+                            onclick="<?php echo $is_disabled ? 'return false;' : 'selectScreeningSlot(\'' . esc_js( $clean_date ) . '\', \'' . esc_js( $clean_time ) . '\')'; ?>">
+                      <span>⏰ <?php echo esc_html( $formatted_t ); ?></span>
+                      
+                      <?php if ( $is_passed ) : ?>
+                        <span style="color:#64748b; font-weight:900;">• Closed</span>
+                      <?php elseif ( $is_sold_out ) : ?>
+                        <span style="color:#ef4444; font-weight:900;">• Sold Out</span>
+                      <?php else : ?>
+                        <span style="<?php echo $is_next_active ? 'background:#000; color:#fff;' : 'background:rgba(13,148,136,0.3); color:#99f6e4;'; ?> font-size:0.7rem; padding:1px 6px; border-radius:4px; font-family:var(--ifs-cinema-font-mono);">
+                          <?php echo intval( $available_seats ); ?> Left
+                        </span>
+                        <span style="<?php echo $is_next_active ? 'color:#000;' : 'color:var(--ifs-cinema-brand-amber);'; ?> font-weight: 900;">
+                          <?php echo $is_next_active ? '★' : '→'; ?>
+                        </span>
+                      <?php endif; ?>
+                    </button>
+                  <?php endforeach; ?>
+                </div>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 04. FULL DETAILS: SYNOPSIS, CAST & TRAILER -->
   <main class="ifs-cinema-container ifs-cinema-details-layout">
     
     <!-- Storyline Card -->
@@ -946,12 +1195,152 @@ $occupied_seats = array_unique( $occupied_seats );
     const CURRENCY = <?php echo wp_json_encode( esc_html( $currency_symbol ) ); ?>;
     const MOVIE_ID = <?php echo intval( $curr_movie_id ); ?>;
     const MOVIE_TITLE = <?php echo wp_json_encode( $title ); ?>;
-    const AUDITORIUM_NAME = <?php echo wp_json_encode( $auditorium ); ?>;
     const CHECKOUT_PAGE_URL = <?php echo wp_json_encode( esc_url_raw( $checkout_url ) ); ?>;
     const IS_LOGGED_IN = <?php echo $is_user_logged ? 'true' : 'false'; ?>;
     const LOGIN_URL = <?php echo wp_json_encode( esc_url( $login_url ) ); ?>;
+    const TODAY_STR = <?php echo wp_json_encode( $today_str ); ?>;
+    const DAY_SCHEDULES = <?php echo wp_json_encode( $day_schedules ); ?>;
+    const SLOT_BOOKED_SEATS_MAP = <?php echo wp_json_encode( $slot_booked_seats_map ); ?>;
+    const SLOT_BOOKINGS = <?php echo wp_json_encode( $slot_booked_counts ); ?>;
+    const INITIAL_DATE = <?php echo wp_json_encode( $initial_selected_date ); ?>;
+    const INITIAL_TIME = <?php echo wp_json_encode( $initial_selected_time ); ?>;
+
+    function formatTime(timeStr) {
+      if (!timeStr) return '06:00 PM';
+      if (timeStr.includes(':') && timeStr.length <= 5) {
+        const parts = timeStr.split(':');
+        let h = parseInt(parts[0], 10);
+        const m = parts[1];
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return `${String(h).padStart(2, '0')}:${m} ${ampm}`;
+      }
+      return timeStr;
+    }
+
+    function selectScreeningSlot(dateVal, timeVal) {
+      const dateSelect = document.getElementById('selectedScreeningDate');
+      if (dateSelect) {
+        dateSelect.value = dateVal;
+      }
+      
+      syncSlotDropdowns(false, timeVal);
+
+      // Smooth scroll back up to seat map
+      document.getElementById('seatSelectorSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function syncSlotDropdowns(autoSelectFirst = false, forceTime = '') {
+      const dateSelect = document.getElementById('selectedScreeningDate');
+      const timeSelect = document.getElementById('selectedScreeningTime');
+      if (!dateSelect || !timeSelect) return;
+
+      const chosenDate = dateSelect.value;
+      const isToday = (chosenDate === TODAY_STR);
+      const now = new Date();
+
+      // Find the schedule configuration for the chosen date
+      const currentDaySched = DAY_SCHEDULES.find(d => d.date === chosenDate);
+      const timesArray = currentDaySched ? currentDaySched.times : ['18:00'];
+
+      const prevSelectedTime = forceTime || timeSelect.value || INITIAL_TIME;
+      timeSelect.innerHTML = '';
+
+      timesArray.forEach(tVal => {
+        const cleanT = tVal.trim();
+        const slotKey = `${chosenDate}_${cleanT}`;
+        const booked = SLOT_BOOKINGS[slotKey] || 0;
+        const isFull = (booked >= 23);
+        let isPassed = false;
+
+        if (isToday) {
+          const parts = cleanT.split(':');
+          const optDate = new Date();
+          optDate.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+          if (optDate < now) {
+            isPassed = true;
+          }
+        }
+
+        const opt = document.createElement('option');
+        opt.value = cleanT;
+        const formatted = formatTime(cleanT);
+
+        if (isPassed) {
+          opt.disabled = true;
+          opt.text = `${formatted} (Passed)`;
+        } else if (isFull) {
+          opt.disabled = true;
+          opt.text = `${formatted} (Sold Out)`;
+        } else {
+          opt.disabled = false;
+          opt.text = `${formatted} (${23 - booked} Left)`;
+        }
+
+        timeSelect.appendChild(opt);
+      });
+
+      // Try selecting previously chosen time if valid & active
+      let targetOption = Array.from(timeSelect.options).find(o => o.value === prevSelectedTime && !o.disabled);
+      if (!targetOption) {
+        // Fallback to first enabled option
+        targetOption = Array.from(timeSelect.options).find(o => !o.disabled) || timeSelect.options[0];
+      }
+
+      if (targetOption) {
+        timeSelect.value = targetOption.value;
+      }
+
+      // Auto-update interactive seat map on date/time sync
+      refreshSeatMap();
+    }
+
+    function refreshSeatMap() {
+      const dateSelect = document.getElementById('selectedScreeningDate');
+      const timeSelect = document.getElementById('selectedScreeningTime');
+      if (!dateSelect || !timeSelect) return;
+
+      const chosenDate = dateSelect.value;
+      const chosenTime = timeSelect.value;
+      const slotKey = `${chosenDate}_${chosenTime}`;
+
+      const occupiedSeats = SLOT_BOOKED_SEATS_MAP[slotKey] || [];
+      const allSeatButtons = document.querySelectorAll('.ifs-cinema-seat-box');
+
+      allSeatButtons.forEach(btn => {
+        const seatId = btn.getAttribute('data-seat-id') || btn.id.replace('seat-', '');
+        const isTaken = occupiedSeats.includes(seatId);
+
+        if (isTaken) {
+          btn.disabled = true;
+          btn.classList.add('occupied');
+          btn.classList.remove('selected');
+          btn.setAttribute('aria-label', `Seat ${seatId} Occupied`);
+          
+          // Remove from selected list if user had it selected previously
+          const sIdx = selectedSeats.findIndex(s => s.id === seatId);
+          if (sIdx > -1) {
+            selectedSeats.splice(sIdx, 1);
+          }
+        } else {
+          btn.disabled = false;
+          btn.classList.remove('occupied');
+          const isSelected = selectedSeats.some(s => s.id === seatId);
+          if (isSelected) {
+            btn.classList.add('selected');
+          } else {
+            btn.classList.remove('selected');
+          }
+          btn.setAttribute('aria-label', `Seat ${seatId}`);
+        }
+      });
+
+      updatePricing();
+    }
 
     function toggleSeat(seatId, el, type) {
+      if (el.disabled || el.classList.contains('occupied')) return;
+
       const price = PRICES[type];
       const index = selectedSeats.findIndex(s => s.id === seatId);
 
@@ -1005,8 +1394,8 @@ $occupied_seats = array_unique( $occupied_seats );
         return;
       }
 
-      const screeningDate = document.getElementById('screeningDateSelect').value;
-      const screeningTime = document.getElementById('screeningTimeSelect').value;
+      const screeningDate = document.getElementById('selectedScreeningDate').value;
+      const screeningTime = document.getElementById('selectedScreeningTime').value;
 
       const subtotal = selectedSeats.reduce((acc, s) => acc + s.price, 0);
       const tax = subtotal * TAX_RATE;
@@ -1017,7 +1406,6 @@ $occupied_seats = array_unique( $occupied_seats );
       const bookingData = {
         movie_id: MOVIE_ID,
         movie_title: MOVIE_TITLE,
-        auditorium: AUDITORIUM_NAME,
         screening_date: screeningDate,
         screening_time: screeningTime,
         seats: selectedSeats.map(s => s.id),
@@ -1038,6 +1426,11 @@ $occupied_seats = array_unique( $occupied_seats );
 
       window.location.href = url.toString();
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize dynamic slot dropdowns and seat map on page load
+      syncSlotDropdowns(false, INITIAL_TIME);
+    });
   </script>
 
 <?php get_footer(); ?>

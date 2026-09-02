@@ -5,7 +5,54 @@
  * @package Noorjahan_Movie_Theater
  */
 
-get_header(); ?>
+get_header(); 
+
+// Fetch dynamic gallery items from backend database/options
+$gallery_items = get_option('bsc_gallery_images', array(
+  array(
+    'url'         => get_theme_file_uri('/assets/img/gallery-1.jpg'),
+    'category'    => 'screens',
+    'title'       => '70ft Curved Silver Screen',
+    'description' => 'High-frame-rate curved giant screen with dual 4K laser projection.'
+  ),
+  array(
+    'url'         => get_theme_file_uri('/assets/img/gallery-2.jpg'),
+    'category'    => 'lounges',
+    'title'       => 'Motorized Recliner Suites',
+    'description' => 'Heated motorized recliners with in-seat dining swivel tables.'
+  ),
+  array(
+    'url'         => get_theme_file_uri('/assets/img/gallery-3.jpg'),
+    'category'    => 'dining',
+    'title'       => 'Signature Food Combos',
+    'description' => 'Chef-prepared hot combos, butter popcorn tubs, and artisan beverages.'
+  ),
+  array(
+    'url'         => get_theme_file_uri('/assets/img/gallery-4.jpg'),
+    'category'    => 'screens',
+    'title'       => 'Dolby Atmos® Acoustic Space',
+    'description' => '128-channel Dolby Atmos spatial surround sound architecture.'
+  ),
+  array(
+    'url'         => get_theme_file_uri('/assets/img/gallery-5.jpg'),
+    'category'    => 'lounges',
+    'title'       => 'Concierge Reception Lobby',
+    'description' => 'Luxury reception lobby at Grand Sylhet Hotel & Resort.'
+  ),
+  array(
+    'url'         => get_theme_file_uri('/assets/img/gallery-6.jpg'),
+    'category'    => 'dining',
+    'title'       => 'In-Seat Waiter Delivery',
+    'description' => 'Freshly served hot meals delivered directly to your cinema chair.'
+  )
+));
+
+$category_labels = array(
+  'screens' => __('Auditoriums', 'noorjahan-movie-theater'),
+  'lounges' => __('VIP Lounges', 'noorjahan-movie-theater'),
+  'dining'  => __('Concessions', 'noorjahan-movie-theater'),
+);
+?>
 
 <main id="primary" class="site-main">
 
@@ -32,77 +79,26 @@ get_header(); ?>
     <div class="ifs-cinema-container">
       <div class="ifs-cinema-gallery-masonry" id="galleryGrid">
         
-        <!-- Photo 1 -->
-        <div class="ifs-cinema-gallery-card" data-category="screens" onclick="openLightbox('https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200&auto=format&fit=crop&q=85', 'Auditorium 1 • 70ft Laser Screen', 'High-frame-rate curved giant screen with dual 4K laser projection.')">
-          <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/gallery-1.jpg' ) ); ?>" 
-               class="ifs-cinema-gallery-img" 
-               alt="<?php esc_attr_e( 'Curved Laser Screen', 'noorjahan-movie-theater' ); ?>"
-               onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=700&auto=format&fit=crop&q=75';">
-          <div class="ifs-cinema-gallery-overlay">
-            <span class="ifs-cinema-gallery-category"><?php esc_html_e( 'Auditoriums', 'noorjahan-movie-theater' ); ?></span>
-            <h3 class="ifs-cinema-gallery-title"><?php esc_html_e( '70ft Curved Silver Screen', 'noorjahan-movie-theater' ); ?></h3>
+        <?php if (!empty($gallery_items)): foreach ($gallery_items as $item): 
+          $cat_key = esc_attr($item['category'] ?? 'screens');
+          $cat_label = $category_labels[$cat_key] ?? __('Multiplex', 'noorjahan-movie-theater');
+          $img_url = esc_url($item['url']);
+          $title = esc_html($item['title'] ?? 'Showcase');
+          $desc = esc_html($item['description'] ?? '');
+        ?>
+          <div class="ifs-cinema-gallery-card" data-category="<?php echo $cat_key; ?>" onclick="openLightbox('<?php echo $img_url; ?>', '<?php echo esc_js($title); ?>', '<?php echo esc_js($desc); ?>')">
+            <img src="<?php echo $img_url; ?>" 
+                 class="ifs-cinema-gallery-img" 
+                 alt="<?php echo esc_attr($title); ?>"
+                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=700&auto=format&fit=crop&q=75';">
+            <div class="ifs-cinema-gallery-overlay">
+              <span class="ifs-cinema-gallery-category"><?php echo esc_html($cat_label); ?></span>
+              <h3 class="ifs-cinema-gallery-title"><?php echo $title; ?></h3>
+            </div>
           </div>
-        </div>
-
-        <!-- Photo 2 -->
-        <div class="ifs-cinema-gallery-card" data-category="lounges" onclick="openLightbox('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&auto=format&fit=crop&q=85', 'Zero-Gravity VIP Loungers', 'Heated motorized recliners with in-seat dining swivel tables.')">
-          <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/gallery-2.jpg' ) ); ?>" 
-               class="ifs-cinema-gallery-img" 
-               alt="<?php esc_attr_e( 'VIP Recliners', 'noorjahan-movie-theater' ); ?>"
-               onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=700&auto=format&fit=crop&q=75';">
-          <div class="ifs-cinema-gallery-overlay">
-            <span class="ifs-cinema-gallery-category"><?php esc_html_e( 'VIP Lounges', 'noorjahan-movie-theater' ); ?></span>
-            <h3 class="ifs-cinema-gallery-title"><?php esc_html_e( 'Motorized Recliner Suites', 'noorjahan-movie-theater' ); ?></h3>
-          </div>
-        </div>
-
-        <!-- Photo 3 -->
-        <div class="ifs-cinema-gallery-card" data-category="dining" onclick="openLightbox('https://images.unsplash.com/photo-1585647347483-22b66260dfff?w=1200&auto=format&fit=crop&q=85', 'Gourmet Concessions', 'Chef-prepared hot combos, butter popcorn tubs, and artisan beverages.')">
-          <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/gallery-3.jpg' ) ); ?>" 
-               class="ifs-cinema-gallery-img" 
-               alt="<?php esc_attr_e( 'Gourmet Popcorn', 'noorjahan-movie-theater' ); ?>"
-               onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1585647347483-22b66260dfff?w=700&auto=format&fit=crop&q=75';">
-          <div class="ifs-cinema-gallery-overlay">
-            <span class="ifs-cinema-gallery-category"><?php esc_html_e( 'Concessions', 'noorjahan-movie-theater' ); ?></span>
-            <h3 class="ifs-cinema-gallery-title"><?php esc_html_e( 'Signature Food Combos', 'noorjahan-movie-theater' ); ?></h3>
-          </div>
-        </div>
-
-        <!-- Photo 4 -->
-        <div class="ifs-cinema-gallery-card" data-category="screens" onclick="openLightbox('https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=1200&auto=format&fit=crop&q=85', 'Auditorium 2 • Dolby Cinema', '128-channel Dolby Atmos spatial surround sound architecture.')">
-          <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/gallery-4.jpg' ) ); ?>" 
-               class="ifs-cinema-gallery-img" 
-               alt="<?php esc_attr_e( 'Dolby Cinema', 'noorjahan-movie-theater' ); ?>"
-               onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=700&auto=format&fit=crop&q=75';">
-          <div class="ifs-cinema-gallery-overlay">
-            <span class="ifs-cinema-gallery-category"><?php esc_html_e( 'Auditoriums', 'noorjahan-movie-theater' ); ?></span>
-            <h3 class="ifs-cinema-gallery-title"><?php esc_html_e( 'Dolby Atmos® Acoustic Space', 'noorjahan-movie-theater' ); ?></h3>
-          </div>
-        </div>
-
-        <!-- Photo 5 -->
-        <div class="ifs-cinema-gallery-card" data-category="lounges" onclick="openLightbox('https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1200&auto=format&fit=crop&q=85', 'Grand Resort Multiplex Lobby', 'Luxury reception lobby at Grand Sylhet Hotel & Resort.')">
-          <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/gallery-5.jpg' ) ); ?>" 
-               class="ifs-cinema-gallery-img" 
-               alt="<?php esc_attr_e( 'Multiplex Lobby', 'noorjahan-movie-theater' ); ?>"
-               onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=700&auto=format&fit=crop&q=75';">
-          <div class="ifs-cinema-gallery-overlay">
-            <span class="ifs-cinema-gallery-category"><?php esc_html_e( 'VIP Lounges', 'noorjahan-movie-theater' ); ?></span>
-            <h3 class="ifs-cinema-gallery-title"><?php esc_html_e( 'Concierge Reception Lobby', 'noorjahan-movie-theater' ); ?></h3>
-          </div>
-        </div>
-
-        <!-- Photo 6 -->
-        <div class="ifs-cinema-gallery-card" data-category="dining" onclick="openLightbox('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200&auto=format&fit=crop&q=85', 'In-Seat Dine-In Experience', 'Freshly served hot meals delivered directly to your cinema chair.')">
-          <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/gallery-6.jpg' ) ); ?>" 
-               class="ifs-cinema-gallery-img" 
-               alt="<?php esc_attr_e( 'Dine-in Experience', 'noorjahan-movie-theater' ); ?>"
-               onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=700&auto=format&fit=crop&q=75';">
-          <div class="ifs-cinema-gallery-overlay">
-            <span class="ifs-cinema-gallery-category"><?php esc_html_e( 'Concessions', 'noorjahan-movie-theater' ); ?></span>
-            <h3 class="ifs-cinema-gallery-title"><?php esc_html_e( 'In-Seat Waiter Delivery', 'noorjahan-movie-theater' ); ?></h3>
-          </div>
-        </div>
+        <?php endforeach; else: ?>
+          <p style="color:var(--ifs-cinema-text-muted); text-align:center; grid-column:1/-1;"><?php esc_html_e('No photos uploaded yet.', 'noorjahan-movie-theater'); ?></p>
+        <?php endif; ?>
 
       </div>
     </div>
@@ -115,8 +111,8 @@ get_header(); ?>
       <img id="lightboxImg" src="" alt="<?php esc_attr_e( 'Enlarged gallery view', 'noorjahan-movie-theater' ); ?>">
       <div class="ifs-cinema-lightbox-caption">
         <div>
-          <h3 id="lightboxTitle" style="color:#fff; font-size:1.25rem;"><?php esc_html_e( 'Caption Title', 'noorjahan-movie-theater' ); ?></h3>
-          <p id="lightboxDesc" style="font-size:0.88rem; color:var(--ifs-cinema-text-secondary); margin-top:2px;"><?php esc_html_e( 'Description', 'noorjahan-movie-theater' ); ?></p>
+          <h3 id="lightboxTitle" style="color:#fff; font-size:1.25rem; margin:0;"><?php esc_html_e( 'Caption Title', 'noorjahan-movie-theater' ); ?></h3>
+          <p id="lightboxDesc" style="font-size:0.88rem; color:var(--ifs-cinema-text-secondary); margin-top:4px; margin-bottom:0;"><?php esc_html_e( 'Description', 'noorjahan-movie-theater' ); ?></p>
         </div>
         <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'BIG SCREEN CINEMAS', 'noorjahan-movie-theater' ); ?></span>
       </div>
@@ -124,5 +120,38 @@ get_header(); ?>
   </div>
 
 </main>
+
+<script>
+  function filterGallery(category, btn) {
+    document.querySelectorAll('.ifs-cinema-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const cards = document.querySelectorAll('#galleryGrid .ifs-cinema-gallery-card');
+    cards.forEach(card => {
+      if (category === 'all' || card.getAttribute('data-category') === category) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+
+  function openLightbox(url, title, desc) {
+    document.getElementById('lightboxImg').src = url;
+    document.getElementById('lightboxTitle').innerText = title;
+    document.getElementById('lightboxDesc').innerText = desc;
+    document.getElementById('lightboxModal').classList.add('active');
+  }
+
+  function closeLightboxDirect() {
+    document.getElementById('lightboxModal').classList.remove('active');
+  }
+
+  function closeLightbox(e) {
+    if (e.target.id === 'lightboxModal') {
+      closeLightboxDirect();
+    }
+  }
+</script>
 
 <?php get_footer(); ?>

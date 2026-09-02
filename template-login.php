@@ -1,217 +1,344 @@
 <?php
 /**
  * Template Name: Auth Access / VIP Portal Page
- * Description: Integrated branded login and registration portal for Big Screen Cinemas.
+ * Description: Simplified 2-Tab Authentication Portal (Sign In & Create Account).
+ * - Sign In: Email + Password + Google Login
+ * - Create Account: Name, Email + Password + Google Login
  *
  * @package Noorjahan_Movie_Theater
  */
 
-// If user is already logged in, redirect them to their account dashboard
+// If user is already logged in, redirect directly
 if ( is_user_logged_in() ) {
-    wp_redirect( home_url( '/account/' ) );
+    $redirect_target = ! empty( $_GET['redirect_to'] ) ? esc_url_raw( $_GET['redirect_to'] ) : home_url( '/account/' );
+    wp_safe_redirect( $redirect_target );
     exit;
 }
 
 $login_error = '';
 if ( isset( $_GET['login'] ) && $_GET['login'] === 'failed' ) {
-    $login_error = __( 'Invalid credentials. Please check your username/email and password.', 'noorjahan-movie-theater' );
+    $login_error = __( 'Invalid email or password. Please check your credentials.', 'noorjahan-movie-theater' );
 }
+
+$redirect_to_param = isset( $_GET['redirect_to'] ) ? esc_url( $_GET['redirect_to'] ) : home_url( '/account/' );
+
+// Google OAuth Login URL handler route
+$google_login_url = home_url( '/account/?bsc_auth=google_callback' );
 
 get_header(); ?>
 
-<main id="primary" class="site-main">
+<style>
+  :root {
+    --auth-bg-dark: #070e11;
+    --auth-card-bg: #0b171c;
+    --auth-amber: #f59e0b;
+    --auth-border: #1e293b;
+    --auth-border-light: rgba(255, 255, 255, 0.08);
+    --auth-text-muted: #64748b;
+  }
 
-  <!-- AUTH WORKSPACE SECTION -->
-  <section class="ifs-cinema-auth-section">
-    <div class="ifs-cinema-container">
-      <div class="ifs-cinema-auth-stage">
-        
-        <!-- Left Showcase Side -->
-        <div class="ifs-cinema-auth-showcase">
-          <div>
-            <span class="ifs-cinema-badge ifs-cinema-badge-amber">
-              <?php esc_html_e( 'MEMBERSHIP ACCESS', 'noorjahan-movie-theater' ); ?>
-            </span>
-            <h2 style="font-size: 2.2rem; color: #fff; margin: 1rem 0 0.5rem; line-height: 1.15;">
-              <?php esc_html_e( 'Unlock Premium Privileges', 'noorjahan-movie-theater' ); ?>
-            </h2>
-            <p style="font-size: 0.95rem;">
-              <?php esc_html_e( 'Sign in to manage your digital admission passes, bypass the concession queues, and access private midnight premiere reservations.', 'noorjahan-movie-theater' ); ?>
-            </p>
+  .ifs-auth-wrapper {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 1rem;
+    background: radial-gradient(circle at center top, #0f232b 0%, var(--auth-bg-dark) 75%);
+  }
 
-            <ul class="ifs-cinema-perks-list">
-              <li class="ifs-cinema-perk-item">
-                <div class="ifs-cinema-perk-bullet">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                  </svg>
-                </div>
-                <span><?php esc_html_e( 'Express turnstile entry with zero line waiting', 'noorjahan-movie-theater' ); ?></span>
-              </li>
-              <li class="ifs-cinema-perk-item">
-                <div class="ifs-cinema-perk-bullet">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                  </svg>
-                </div>
-                <span><?php esc_html_e( 'Complimentary concession upgrades on VIP loungers', 'noorjahan-movie-theater' ); ?></span>
-              </li>
-              <li class="ifs-cinema-perk-item">
-                <div class="ifs-cinema-perk-bullet">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                  </svg>
-                </div>
-                <span><?php esc_html_e( '48-hour advance booking access for global blockbusters', 'noorjahan-movie-theater' ); ?></span>
-              </li>
-            </ul>
-          </div>
+  .ifs-auth-card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--auth-card-bg);
+    border: 1px solid var(--auth-border);
+    border-radius: 20px;
+    padding: 2.25rem 2rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    color: #f8fafc;
+    box-sizing: border-box;
+  }
 
-          <div style="font-size: 0.8rem; color: var(--ifs-cinema-text-muted); border-top: 1px solid var(--ifs-cinema-border-subtle); padding-top: 1.25rem;">
-            <?php esc_html_e( 'Grand Sylhet Hotel & Resort Multiplex • VIP Membership Desk', 'noorjahan-movie-theater' ); ?>
-          </div>
-        </div>
+  .ifs-auth-tab-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: #060d10;
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid var(--auth-border);
+    margin-bottom: 1.75rem;
+    gap: 4px;
+  }
 
-        <!-- Right Forms Side -->
-        <div class="ifs-cinema-auth-workspace">
-          
-          <!-- Segmented Tab Toggle -->
-          <div class="ifs-cinema-tab-switcher">
-            <button type="button" class="ifs-cinema-tab-btn active" id="tabLoginBtn" onclick="switchAuthTab('login')"><?php esc_html_e( 'Sign In', 'noorjahan-movie-theater' ); ?></button>
-            <button type="button" class="ifs-cinema-tab-btn" id="tabRegisterBtn" onclick="switchAuthTab('register')"><?php esc_html_e( 'Create Account', 'noorjahan-movie-theater' ); ?></button>
-          </div>
+  .ifs-auth-tab-btn {
+    padding: 10px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: var(--auth-text-muted);
+    font-weight: 800;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    outline: none;
+  }
 
-          <?php if ( ! empty( $login_error ) ) : ?>
-            <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.25rem;">
-              <?php echo esc_html( $login_error ); ?>
-            </div>
-          <?php endif; ?>
+  .ifs-auth-tab-btn:hover {
+    color: #fff;
+  }
 
-          <!-- SIGN IN FORM -->
-          <div class="ifs-cinema-form-panel active" id="loginPanel">
-            <div style="margin-bottom: 1.75rem;">
-              <h3 style="font-size: 1.6rem; color: #fff;"><?php esc_html_e( 'Welcome Back', 'noorjahan-movie-theater' ); ?></h3>
-              <p style="font-size: 0.9rem;"><?php esc_html_e( 'Enter your member credentials to access your passes.', 'noorjahan-movie-theater' ); ?></p>
-            </div>
+  .ifs-auth-tab-btn.active {
+    background: var(--auth-amber) !important;
+    color: #000 !important;
+    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
+  }
 
-            <form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-              <input type="hidden" name="action" value="bsc_custom_login">
-              
-              <div class="ifs-cinema-input-group">
-                <label><?php esc_html_e( 'Email Address or Username', 'noorjahan-movie-theater' ); ?></label>
-                <input type="text" class="ifs-cinema-input-field" name="log" placeholder="<?php esc_attr_e( 'name@domain.com', 'noorjahan-movie-theater' ); ?>" required>
-              </div>
+  .ifs-auth-field-group {
+    margin-bottom: 1.15rem;
+  }
 
-              <div class="ifs-cinema-input-group">
-                <label><?php esc_html_e( 'Password', 'noorjahan-movie-theater' ); ?></label>
-                <input type="password" class="ifs-cinema-input-field" name="pwd" placeholder="••••••••" required>
-              </div>
+  .ifs-auth-field-group label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--auth-text-muted);
+    margin-bottom: 0.35rem;
+    letter-spacing: 0.04em;
+  }
 
-              <div class="ifs-cinema-meta-links">
-                <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.82rem;">
-                  <input type="checkbox" name="rememberme" value="forever" checked style="accent-color:var(--ifs-cinema-brand-amber);"> <?php esc_html_e( 'Remember me', 'noorjahan-movie-theater' ); ?>
-                </label>
-                <a href="<?php echo esc_url( wp_lostpassword_url() ); ?>"><?php esc_html_e( 'Forgot Password?', 'noorjahan-movie-theater' ); ?></a>
-              </div>
+  .ifs-auth-input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: #070e11;
+    border: 1px solid var(--auth-border);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.92rem;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
 
-              <button type="submit" class="ifs-cinema-btn ifs-cinema-btn-amber" style="width:100%; font-size:0.95rem;">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M10 17v-3H3v-4h7V7l5 5-5 5zm10 4h-8v-2h8V5h-8V3h8c1.1 0 2 .9 2 2v14c0 1.1-.9 2-2 2z"/>
-                </svg>
-                <?php esc_html_e( 'Sign In to VIP Portal', 'noorjahan-movie-theater' ); ?>
-              </button>
-            </form>
+  .ifs-auth-input:focus {
+    border-color: var(--auth-amber);
+  }
 
-            <div class="ifs-cinema-social-divider">
-              <span><?php esc_html_e( 'Or Authenticate With', 'noorjahan-movie-theater' ); ?></span>
-            </div>
+  .ifs-auth-submit-btn {
+    width: 100%;
+    padding: 0.9rem;
+    border-radius: 8px;
+    font-weight: 900;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    background: var(--auth-amber);
+    color: #000;
+    margin-top: 0.5rem;
+  }
 
-            <div class="ifs-cinema-social-stack">
-              <button type="button" class="ifs-cinema-social-btn" onclick="window.location.href='<?php echo esc_url( home_url( '/account/' ) ); ?>';">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.053 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/>
-                </svg>
-                <span><?php esc_html_e( 'Google', 'noorjahan-movie-theater' ); ?></span>
-              </button>
-              <button type="button" class="ifs-cinema-social-btn" onclick="window.location.href='<?php echo esc_url( home_url( '/account/' ) ); ?>';">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.85c.66-.82 1.11-1.96.99-3.1-.96.04-2.18.65-2.88 1.47-.63.73-1.18 1.9-1.03 3.01 1.07.08 2.22-.56 2.92-1.38z"/>
-                </svg>
-                <span><?php esc_html_e( 'Apple ID', 'noorjahan-movie-theater' ); ?></span>
-              </button>
-            </div>
-          </div>
+  .ifs-auth-submit-btn:hover {
+    background: #d97706;
+  }
 
-          <!-- REGISTRATION FORM -->
-          <div class="ifs-cinema-form-panel" id="registerPanel">
-            <div style="margin-bottom: 1.75rem;">
-              <h3 style="font-size: 1.6rem; color: #fff;"><?php esc_html_e( 'Join VIP Club', 'noorjahan-movie-theater' ); ?></h3>
-              <p style="font-size: 0.9rem;"><?php esc_html_e( 'Create your account for instant pass storage & exclusive rates.', 'noorjahan-movie-theater' ); ?></p>
-            </div>
+  .ifs-auth-divider {
+    position: relative;
+    text-align: center;
+    margin: 1.75rem 0 1.25rem;
+  }
 
-            <form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-              <input type="hidden" name="action" value="bsc_custom_register">
+  .ifs-auth-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--auth-border-light);
+  }
 
-              <div class="ifs-cinema-input-group">
-                <label><?php esc_html_e( 'Full Name', 'noorjahan-movie-theater' ); ?></label>
-                <input type="text" class="ifs-cinema-input-field" name="reg_name" placeholder="<?php esc_attr_e( 'e.g. Mahfuzur Rahman', 'noorjahan-movie-theater' ); ?>" required>
-              </div>
+  .ifs-auth-divider span {
+    position: relative;
+    background: var(--auth-card-bg);
+    padding: 0 12px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--auth-text-muted);
+  }
 
-              <div class="ifs-cinema-input-group">
-                <label><?php esc_html_e( 'Mobile Number (for SMS Pass Validation)', 'noorjahan-movie-theater' ); ?></label>
-                <input type="tel" class="ifs-cinema-input-field" name="reg_phone" placeholder="<?php esc_attr_e( '+880 1700-000000', 'noorjahan-movie-theater' ); ?>" required>
-              </div>
+  .ifs-google-btn {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    box-sizing: border-box;
+  }
 
-              <div class="ifs-cinema-input-group">
-                <label><?php esc_html_e( 'Email Address', 'noorjahan-movie-theater' ); ?></label>
-                <input type="email" class="ifs-cinema-input-field" name="reg_email" placeholder="<?php esc_attr_e( 'name@domain.com', 'noorjahan-movie-theater' ); ?>" required>
-              </div>
+  .ifs-google-btn:hover {
+    background: #f1f5f9;
+  }
+</style>
 
-              <div class="ifs-cinema-input-group">
-                <label><?php esc_html_e( 'Create Password', 'noorjahan-movie-theater' ); ?></label>
-                <input type="password" class="ifs-cinema-input-field" name="reg_pass" placeholder="<?php esc_attr_e( 'At least 8 characters', 'noorjahan-movie-theater' ); ?>" required>
-              </div>
+<main id="primary" class="site-main ifs-auth-wrapper">
+  <div class="ifs-auth-card">
 
-              <div style="font-size: 0.78rem; color: var(--ifs-cinema-text-muted); margin-bottom: 1.5rem; line-height: 1.5;">
-                <?php esc_html_e( "By registering, you agree to Big Screen Cinemas' Theatre Rules & Digital Ticketing Terms.", 'noorjahan-movie-theater' ); ?>
-              </div>
-
-              <button type="submit" class="ifs-cinema-btn ifs-cinema-btn-amber" style="width:100%; font-size:0.95rem;">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
-                <?php esc_html_e( 'Register & Activate VIP Club', 'noorjahan-movie-theater' ); ?>
-              </button>
-            </form>
-          </div>
-
-        </div>
-
-      </div>
+    <!-- Header Banner -->
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <span style="font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; color: var(--auth-amber); text-transform: uppercase;">
+        <?php esc_html_e( 'VIP Pass Portal', 'noorjahan-movie-theater' ); ?>
+      </span>
+      <h1 style="font-size: 1.75rem; font-weight: 900; color: #fff; margin: 0.25rem 0 0.4rem; letter-spacing: -0.02em;">
+        <?php esc_html_e( 'Access Your Account', 'noorjahan-movie-theater' ); ?>
+      </h1>
+      <p style="font-size: 0.85rem; color: var(--auth-text-muted); margin: 0;">
+        <?php esc_html_e( 'Manage tickets, concessions & digital passes.', 'noorjahan-movie-theater' ); ?>
+      </p>
     </div>
-  </section>
 
+    <!-- Error Alert -->
+    <?php if ( ! empty( $login_error ) ) : ?>
+      <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.25rem; text-align: center;">
+        <?php echo esc_html( $login_error ); ?>
+      </div>
+    <?php endif; ?>
+
+    <!-- 2 MAIN TABS: SIGN IN & CREATE ACCOUNT -->
+    <div class="ifs-auth-tab-bar">
+      <button type="button" class="ifs-auth-tab-btn active" id="tab-btn-signin">
+        <?php esc_html_e( 'Sign In', 'noorjahan-movie-theater' ); ?>
+      </button>
+      <button type="button" class="ifs-auth-tab-btn" id="tab-btn-create">
+        <?php esc_html_e( 'Create Account', 'noorjahan-movie-theater' ); ?>
+      </button>
+    </div>
+
+    <!-- TAB 1: SIGN IN -->
+    <div class="ifs-auth-pane" id="auth-pane-signin" style="display: block;">
+      <form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+        <input type="hidden" name="action" value="bsc_custom_login">
+        <input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_to_param ); ?>">
+        
+        <div class="ifs-auth-field-group">
+          <label><?php esc_html_e( 'Email Address', 'noorjahan-movie-theater' ); ?> *</label>
+          <input type="email" name="log" class="ifs-auth-input" placeholder="name@domain.com" required>
+        </div>
+
+        <div class="ifs-auth-field-group">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+            <label style="margin:0;"><?php esc_html_e( 'Password', 'noorjahan-movie-theater' ); ?> *</label>
+            <a href="<?php echo esc_url( wp_lostpassword_url() ); ?>" style="font-size:0.75rem; color:var(--auth-amber); text-decoration:none;">
+              <?php esc_html_e( 'Forgot?', 'noorjahan-movie-theater' ); ?>
+            </a>
+          </div>
+          <input type="password" name="pwd" class="ifs-auth-input" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="ifs-auth-submit-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M10 17v-3H3v-4h7V7l5 5-5 5zm10 4h-8v-2h8V5h-8V3h8c1.1 0 2 .9 2 2v14c0 1.1-.9 2-2 2z"/>
+          </svg>
+          <?php esc_html_e( 'Sign In', 'noorjahan-movie-theater' ); ?>
+        </button>
+      </form>
+
+      <div class="ifs-auth-divider">
+        <span><?php esc_html_e( 'Or Continue With', 'noorjahan-movie-theater' ); ?></span>
+      </div>
+
+      <a href="<?php echo esc_url( $google_login_url ); ?>" class="ifs-google-btn">
+        <svg viewBox="0 0 24 24" width="18" height="18">
+          <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
+          <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/>
+          <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3 0-.8.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12 0 14.5s.7 4.8 1.9 7.2l3.7-2.9z"/>
+          <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"/>
+        </svg>
+        <span><?php esc_html_e( 'Sign In with Google', 'noorjahan-movie-theater' ); ?></span>
+      </a>
+    </div>
+
+    <!-- TAB 2: CREATE ACCOUNT -->
+    <div class="ifs-auth-pane" id="auth-pane-create" style="display: none;">
+      <form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+        <input type="hidden" name="action" value="bsc_custom_register">
+
+        <div class="ifs-auth-field-group">
+          <label><?php esc_html_e( 'Full Name', 'noorjahan-movie-theater' ); ?> *</label>
+          <input type="text" name="reg_name" class="ifs-auth-input" placeholder="e.g. Mahfuzur Rahman" required>
+        </div>
+
+        <div class="ifs-auth-field-group">
+          <label><?php esc_html_e( 'Email Address', 'noorjahan-movie-theater' ); ?> *</label>
+          <input type="email" name="reg_email" class="ifs-auth-input" placeholder="name@domain.com" required>
+        </div>
+
+        <div class="ifs-auth-field-group">
+          <label><?php esc_html_e( 'Create Password', 'noorjahan-movie-theater' ); ?> *</label>
+          <input type="password" name="reg_pass" class="ifs-auth-input" placeholder="At least 6 characters" required>
+        </div>
+
+        <button type="submit" class="ifs-auth-submit-btn">
+          <?php esc_html_e( 'Create Account', 'noorjahan-movie-theater' ); ?>
+        </button>
+      </form>
+
+      <div class="ifs-auth-divider">
+        <span><?php esc_html_e( 'Or Register With', 'noorjahan-movie-theater' ); ?></span>
+      </div>
+
+      <a href="<?php echo esc_url( $google_login_url ); ?>" class="ifs-google-btn">
+        <svg viewBox="0 0 24 24" width="18" height="18">
+          <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
+          <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/>
+          <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3 0-.8.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12 0 14.5s.7 4.8 1.9 7.2l3.7-2.9z"/>
+          <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"/>
+        </svg>
+        <span><?php esc_html_e( 'Sign Up with Google', 'noorjahan-movie-theater' ); ?></span>
+      </a>
+    </div>
+
+  </div>
 </main>
 
 <script>
-  function switchAuthTab(tab) {
-    const loginBtn = document.getElementById('tabLoginBtn');
-    const registerBtn = document.getElementById('tabRegisterBtn');
-    const loginPanel = document.getElementById('loginPanel');
-    const registerPanel = document.getElementById('registerPanel');
+  document.addEventListener('DOMContentLoaded', function() {
+    const btnSignin = document.getElementById('tab-btn-signin');
+    const btnCreate = document.getElementById('tab-btn-create');
+    const paneSignin = document.getElementById('auth-pane-signin');
+    const paneCreate = document.getElementById('auth-pane-create');
 
-    if (tab === 'login') {
-      loginBtn.classList.add('active');
-      registerBtn.classList.remove('active');
-      loginPanel.classList.add('active');
-      registerPanel.classList.remove('active');
-    } else {
-      registerBtn.classList.add('active');
-      loginBtn.classList.remove('active');
-      registerPanel.classList.add('active');
-      loginPanel.classList.remove('active');
+    if (btnSignin && btnCreate && paneSignin && paneCreate) {
+      btnSignin.addEventListener('click', function() {
+        paneSignin.style.display = 'block';
+        paneCreate.style.display = 'none';
+        btnSignin.classList.add('active');
+        btnCreate.classList.remove('active');
+      });
+
+      btnCreate.addEventListener('click', function() {
+        paneSignin.style.display = 'none';
+        paneCreate.style.display = 'block';
+        btnCreate.classList.add('active');
+        btnSignin.classList.remove('active');
+      });
     }
-  }
+  });
 </script>
 
 <?php get_footer(); ?>
