@@ -1,3 +1,10 @@
+<?php
+/**
+ * Theme Header Template
+ *
+ * @package Noorjahan_Movie_Theater
+ */
+?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
 <head>
@@ -35,7 +42,7 @@
         <?php if ( has_custom_logo() ) : ?>
           <?php 
             $custom_logo_id = get_theme_mod( 'custom_logo' );
-            $logo_img = wp_get_attachment_image_src( $custom_logo_id, 'full' );
+            $logo_img = wp_get_attachment_image_src($custom_logo_id, 'full' );
           ?>
           <img src="<?php echo esc_url( $logo_img[0] ); ?>" alt="<?php bloginfo( 'name' ); ?>">
         <?php else : ?>
@@ -65,9 +72,13 @@
 
       <!-- Login / VIP Account Button & Mobile Toggle -->
       <div style="display: flex; align-items: center; gap: 1rem;">
-        <a href="<?php echo esc_url( is_user_logged_in() ? home_url( '/account/' ) : wp_login_url( home_url( '/account/' ) ) ); ?>" class="ifs-cinema-btn ifs-cinema-btn-amber ifs-cinema-btn-sm">
+        <?php
+        $account_link = is_user_logged_in() ? home_url( '/account/' ) : home_url( '/custom-login/' );
+        $button_label = is_user_logged_in() ? esc_html__( 'My Account', 'noorjahan-movie-theater' ) : esc_html__( 'Login / Account', 'noorjahan-movie-theater' );
+        ?>
+        <a href="<?php echo esc_url( $account_link ); ?>" class="ifs-cinema-btn ifs-cinema-btn-amber ifs-cinema-btn-sm">
           <svg class="ifs-cinema-svg-icon" style="width:16px; height:16px;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span><?php echo is_user_logged_in() ? esc_html__( 'My Account', 'noorjahan-movie-theater' ) : esc_html__( 'Login / Account', 'noorjahan-movie-theater' ); ?></span>
+          <span><?php echo $button_label; ?></span>
         </a>
         <button class="ifs-cinema-mobile-toggle" id="ifsMobileToggleBtn" aria-label="<?php esc_attr_e( 'Open Navigation', 'noorjahan-movie-theater' ); ?>">
           <span style="font-size: 22px; line-height: 1; color: var(--ifs-cinema-brand-amber);">☰</span>

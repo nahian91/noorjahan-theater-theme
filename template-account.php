@@ -1,15 +1,60 @@
 <?php
 /**
  * Template Name: Account Dashboard Page
- * Description: Dynamic user account dashboard displaying live active passes with QR tokens, screening schedules, booking history, and member metrics.
+ * Description: Dynamic user account dashboard displaying live active passes with QR tokens, screening schedules, booking history, and profile management.
  *
  * @package Noorjahan_Movie_Theater
  */
 
 // Auto-gate: Redirect non-logged-in visitors to the custom login page
 if ( ! is_user_logged_in() ) {
-    wp_safe_redirect( wp_login_url( home_url( '/account/' ) ) );
+    $current_url = set_url_scheme( 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
+    wp_safe_redirect( add_query_arg( 'redirect_to', urlencode( $current_url ), home_url( '/custom-login/' ) ) );
     exit;
+}
+
+// Handle Profile & Password Update Submission
+$profile_notice = '';
+if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['ifs_update_profile_nonce'] ) ) {
+    if ( wp_verify_nonce( $_POST['ifs_update_profile_nonce'], 'ifs_save_profile_action' ) ) {
+        $current_user_id = get_current_user_id();
+        
+        $new_name  = sanitize_text_field( wp_unslash( $_POST['user_name'] ?? '' ) );
+        $new_phone = sanitize_text_field( wp_unslash( $_POST['user_phone'] ?? '' ) );
+        $pass_cur  = $_POST['current_pass'] ?? '';
+        $pass_new  = $_POST['new_pass'] ?? '';
+        $pass_conf = $_POST['confirm_pass'] ?? '';
+
+        // Update Name & Phone
+        if ( ! empty( $new_name ) ) {
+            wp_update_user( array(
+                'ID'           => $current_user_id,
+                'display_name' => $new_name,
+                'first_name'   => $new_name,
+            ) );
+        }
+        if ( ! empty( $new_phone ) ) {
+            update_user_meta( $current_user_id, 'phone_number', $new_phone );
+            update_user_meta( $current_user_id, 'billing_phone', $new_phone );
+        }
+
+        // Handle Password Update if requested
+        if ( ! empty( $pass_new ) || ! empty( $pass_conf ) ) {
+            $user_data = get_userdata( $current_user_id );
+            if ( wp_check_password( $pass_cur, $user_data->user_pass, $current_user_id ) ) {
+                if ( $pass_new === $pass_conf && strlen( $pass_new ) >= 6 ) {
+                    wp_set_password( $pass_new, $current_user_id );
+                    $profile_notice = 'success_pass';
+                } else {
+                    $profile_notice = 'error_mismatch';
+                }
+            } else {
+                $profile_notice = 'error_wrong_pass';
+            }
+        } else {
+            $profile_notice = 'success_profile';
+        }
+    }
 }
 
 get_header();
@@ -32,7 +77,6 @@ $customer_record = $wpdb->get_row( $wpdb->prepare(
 
 $membership_id = $customer_record ? $customer_record->membership_id : ( '#BSC-' . ( 10000 + $current_user->ID ) );
 $member_tier   = $customer_record ? $customer_record->tier : 'VIP CLUB MEMBER';
-$reward_points = $customer_record ? intval( $customer_record->reward_points ) : 150;
 $total_visits  = $customer_record ? intval( $customer_record->total_visits ) : 1;
 
 // Retrieve all customer bookings
@@ -119,7 +163,7 @@ $currency_symbol = get_option( 'bsc_currency_symbol', 'BDT' );
 
   .ifs-cinema-kpi-deck {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.25rem;
   }
 
@@ -314,6 +358,7 @@ $currency_symbol = get_option( 'bsc_currency_symbol', 'BDT' );
     color: #fff;
     font-size: 0.9rem;
     outline: none;
+    box-sizing: border-box;
   }
 
   .ifs-cinema-input-field:focus {
@@ -330,6 +375,9 @@ $currency_symbol = get_option( 'bsc_currency_symbol', 'BDT' );
     .ifs-cinema-pass-right-qr {
       border-left: none;
       border-top: 2px dashed rgba(255, 255, 255, 0.1);
+    }
+    .ifs-cinema-form-grid-2 {
+      grid-template-columns: 1fr;
     }
   }
 </style>
@@ -384,18 +432,6 @@ $currency_symbol = get_option( 'bsc_currency_symbol', 'BDT' );
           <div>
             <div class="ifs-cinema-kpi-val"><?php echo esc_html( $total_visits ); ?></div>
             <div class="ifs-cinema-kpi-lbl"><?php esc_html_e( 'Total Cinema Visits', 'noorjahan-movie-theater' ); ?></div>
-          </div>
-        </div>
-
-        <div class="ifs-cinema-kpi-card">
-          <div class="ifs-cinema-kpi-icon">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
-              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-            </svg>
-          </div>
-          <div>
-            <div class="ifs-cinema-kpi-val"><?php echo number_format( $reward_points ); ?></div>
-            <div class="ifs-cinema-kpi-lbl"><?php esc_html_e( 'Reward Points Earned', 'noorjahan-movie-theater' ); ?></div>
           </div>
         </div>
       </div>
@@ -553,22 +589,42 @@ $currency_symbol = get_option( 'bsc_currency_symbol', 'BDT' );
         <div class="ifs-cinema-tab-pane" id="pane-profile">
           <div class="ifs-cinema-profile-form-card">
             <h2 style="font-size: 1.6rem; color: #fff; margin-bottom: 1.5rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:1rem; font-weight:900;">
-              <?php esc_html_e( 'Personal VIP Profile Settings', 'noorjahan-movie-theater' ); ?>
+              <?php esc_html_e( 'Personal VIP Profile & Security Settings', 'noorjahan-movie-theater' ); ?>
             </h2>
 
-            <form onsubmit="event.preventDefault(); alert('Profile preferences updated successfully.');">
+            <?php if ( 'success_profile' === $profile_notice ) : ?>
+              <div style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); color:#34d399; padding:0.75rem 1rem; border-radius:8px; margin-bottom:1.5rem; font-size:0.88rem; font-weight:600;">
+                <?php esc_html_e( 'Profile details updated successfully.', 'noorjahan-movie-theater' ); ?>
+              </div>
+            <?php elseif ( 'success_pass' === $profile_notice ) : ?>
+              <div style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); color:#34d399; padding:0.75rem 1rem; border-radius:8px; margin-bottom:1.5rem; font-size:0.88rem; font-weight:600;">
+                <?php esc_html_e( 'Password and profile preferences updated successfully.', 'noorjahan-movie-theater' ); ?>
+              </div>
+            <?php elseif ( 'error_mismatch' === $profile_notice ) : ?>
+              <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#f87171; padding:0.75rem 1rem; border-radius:8px; margin-bottom:1.5rem; font-size:0.88rem; font-weight:600;">
+                <?php esc_html_e( 'New passwords do not match or are shorter than 6 characters.', 'noorjahan-movie-theater' ); ?>
+              </div>
+            <?php elseif ( 'error_wrong_pass' === $profile_notice ) : ?>
+              <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#f87171; padding:0.75rem 1rem; border-radius:8px; margin-bottom:1.5rem; font-size:0.88rem; font-weight:600;">
+                <?php esc_html_e( 'Incorrect current password provided.', 'noorjahan-movie-theater' ); ?>
+              </div>
+            <?php endif; ?>
+
+            <form method="POST">
+              <?php wp_nonce_field( 'ifs_save_profile_action', 'ifs_update_profile_nonce' ); ?>
+              
               <div class="ifs-cinema-form-grid-2">
                 <div class="ifs-cinema-input-group">
                   <label><?php esc_html_e( 'Full Legal Name', 'noorjahan-movie-theater' ); ?></label>
-                  <input type="text" class="ifs-cinema-input-field" value="<?php echo esc_attr( $user_name ); ?>" required>
+                  <input type="text" class="ifs-cinema-input-field" name="user_name" value="<?php echo esc_attr( $user_name ); ?>" required>
                 </div>
                 <div class="ifs-cinema-input-group">
-                  <label><?php esc_html_e( 'Mobile Phone (For SMS Turnstile Passes)', 'noorjahan-movie-theater' ); ?></label>
-                  <input type="tel" class="ifs-cinema-input-field" value="<?php echo esc_attr( $user_phone ); ?>" placeholder="+880 1700-000000">
+                  <label><?php esc_html_e( 'Mobile Phone', 'noorjahan-movie-theater' ); ?></label>
+                  <input type="tel" class="ifs-cinema-input-field" name="user_phone" value="<?php echo esc_attr( $user_phone ); ?>" placeholder="+880 1700-000000">
                 </div>
               </div>
 
-              <div class="ifs-cinema-form-grid-2">
+              <div class="ifs-cinema-form-grid-2" style="margin-bottom:1.5rem;">
                 <div class="ifs-cinema-input-group">
                   <label><?php esc_html_e( 'Email Address', 'noorjahan-movie-theater' ); ?></label>
                   <input type="email" class="ifs-cinema-input-field" value="<?php echo esc_attr( $user_email ); ?>" readonly style="background:#04080a; opacity:0.7;">
@@ -579,11 +635,31 @@ $currency_symbol = get_option( 'bsc_currency_symbol', 'BDT' );
                 </div>
               </div>
 
-              <button type="submit" class="ifs-cinema-btn ifs-cinema-btn-amber" style="margin-top:1rem;">
+              <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:1.5rem; margin-top:1.5rem;">
+                <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 1rem; font-weight:800;"><?php esc_html_e( 'Change Password', 'noorjahan-movie-theater' ); ?></h3>
+                
+                <div class="ifs-cinema-input-group" style="margin-bottom:1.25rem;">
+                  <label><?php esc_html_e( 'Current Password (Leave blank to keep current)', 'noorjahan-movie-theater' ); ?></label>
+                  <input type="password" class="ifs-cinema-input-field" name="current_pass" placeholder="••••••••">
+                </div>
+
+                <div class="ifs-cinema-form-grid-2">
+                  <div class="ifs-cinema-input-group">
+                    <label><?php esc_html_e( 'New Password', 'noorjahan-movie-theater' ); ?></label>
+                    <input type="password" class="ifs-cinema-input-field" name="new_pass" placeholder="At least 6 characters">
+                  </div>
+                  <div class="ifs-cinema-input-group">
+                    <label><?php esc_html_e( 'Confirm New Password', 'noorjahan-movie-theater' ); ?></label>
+                    <input type="password" class="ifs-cinema-input-field" name="confirm_pass" placeholder="Re-enter new password">
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="ifs-cinema-btn ifs-cinema-btn-amber" style="margin-top:1.5rem;">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                   <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
                 </svg>
-                <?php esc_html_e( 'Save Profile Changes', 'noorjahan-movie-theater' ); ?>
+                <?php esc_html_e( 'Save Profile & Password Changes', 'noorjahan-movie-theater' ); ?>
               </button>
             </form>
           </div>

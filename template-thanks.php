@@ -80,13 +80,6 @@ $qr_image_url = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data='
     border-bottom: 1px solid var(--ifs-cinema-border);
   }
 
-  .ifs-cinema-container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 0 1rem;
-    box-sizing: border-box;
-  }
-
   .ifs-cinema-success-badge-icon {
     width: 64px;
     height: 64px;
