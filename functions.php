@@ -201,23 +201,122 @@ add_action( 'admin_post_bsc_custom_login', 'bsc_handle_custom_login' );
 endif;
 
 // =============================================================================
-// CUSTOM FRONTEND REGISTRATION HANDLER
+// MULTI-STEP OTP REGISTRATION HANDLERS
 // =============================================================================
-if ( ! function_exists( 'bsc_handle_custom_registration' ) ) :
-function bsc_handle_custom_registration() {
-    $name        = sanitize_text_field( wp_unslash( $_POST['reg_name'] ?? '' ) );
+
+// Step 1: Send OTP to Email
+add_action( 'admin_post_nopriv_bsc_send_email_otp', 'bsc_handle_send_email_otp' );
+add_action( 'admin_post_bsc_send_email_otp', 'bsc_handle_send_email_otp' );
+function bsc_handle_send_email_otp() {
     $email       = sanitize_email( wp_unslash( $_POST['reg_email'] ?? '' ) );
-    $phone       = sanitize_text_field( wp_unslash( $_POST['reg_phone'] ?? '' ) );
-    $password    = $_POST['reg_pass'] ?? '';
     $redirect_to = ! empty( $_POST['redirect_to'] ) ? esc_url_raw( $_POST['redirect_to'] ) : home_url( '/account/' );
 
-    if ( empty( $email ) || empty( $password ) || empty( $name ) ) {
+    if ( empty( $email ) || ! is_email( $email ) ) {
         wp_safe_redirect( add_query_arg( array( 'auth_error' => 'empty_fields', 'tab' => 'create' ), home_url( '/custom-login/' ) ) );
         exit;
     }
 
     if ( email_exists( $email ) ) {
         wp_safe_redirect( add_query_arg( array( 'auth_error' => 'email_exists', 'tab' => 'create' ), home_url( '/custom-login/' ) ) );
+        exit;
+    }
+
+    $otp_code = wp_rand( 100000, 999999 );
+
+    $temp_data = array(
+        'email'       => $email,
+        'otp'         => $otp_code,
+        'redirect_to' => $redirect_to,
+        'verified'    => false,
+    );
+    set_transient( 'bsc_otp_flow_' . md5( $email ), $temp_data, 300 );
+
+    $subject = 'Your Cinema Verification Code';
+    $message = sprintf( "Your OTP verification code is: %s\nThis code will expire in 5 minutes.", $otp_code );
+    $headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+
+    wp_mail( $email, $subject, $message, $headers );
+
+    $redirect_url = add_query_arg( 
+        array( 
+            'tab'           => 'create', 
+            'step'          => 'verify_otp', 
+            'pending_email' => urlencode( $email ),
+            'redirect_to'   => urlencode( $redirect_to ),
+        ), 
+        home_url( '/custom-login/' ) 
+    );
+
+    wp_safe_redirect( $redirect_url );
+    exit;
+}
+
+// Step 2: Verify OTP
+add_action( 'admin_post_nopriv_bsc_verify_email_otp', 'bsc_handle_verify_email_otp' );
+add_action( 'admin_post_bsc_verify_email_otp', 'bsc_handle_verify_email_otp' );
+function bsc_handle_verify_email_otp() {
+    $email    = sanitize_email( wp_unslash( $_POST['pending_email'] ?? '' ) );
+    $user_otp = sanitize_text_field( wp_unslash( $_POST['entered_otp'] ?? '' ) );
+    $redirect_to = ! empty( $_POST['redirect_to'] ) ? esc_url_raw( $_POST['redirect_to'] ) : home_url( '/account/' );
+
+    $saved_data = get_transient( 'bsc_otp_flow_' . md5( $email ) );
+
+    if ( ! $saved_data || (string) $saved_data['otp'] !== (string) $user_otp ) {
+        wp_safe_redirect( add_query_arg( 
+            array( 
+                'auth_error'    => 'invalid_otp', 
+                'tab'           => 'create', 
+                'step'          => 'verify_otp', 
+                'pending_email' => urlencode( $email ),
+                'redirect_to'   => urlencode( $redirect_to ),
+            ), 
+            home_url( '/custom-login/' ) 
+        ));
+        exit;
+    }
+
+    $saved_data['verified'] = true;
+    set_transient( 'bsc_otp_flow_' . md5( $email ), $saved_data, 300 );
+
+    $redirect_url = add_query_arg( 
+        array( 
+            'tab'           => 'create', 
+            'step'          => 'complete_profile', 
+            'pending_email' => urlencode( $email ),
+            'redirect_to'   => urlencode( $redirect_to ),
+        ), 
+        home_url( '/custom-login/' ) 
+    );
+
+    wp_safe_redirect( $redirect_url );
+    exit;
+}
+
+// Step 3: Finalize Account Creation
+add_action( 'admin_post_nopriv_bsc_finalize_registration', 'bsc_handle_finalize_registration' );
+add_action( 'admin_post_bsc_finalize_registration', 'bsc_handle_finalize_registration' );
+function bsc_handle_finalize_registration() {
+    $email        = sanitize_email( wp_unslash( $_POST['pending_email'] ?? '' ) );
+    $name         = sanitize_text_field( wp_unslash( $_POST['reg_name'] ?? '' ) );
+    $phone        = sanitize_text_field( wp_unslash( $_POST['reg_phone'] ?? '' ) );
+    $password     = $_POST['reg_pass'] ?? '';
+    $pass_confirm = $_POST['reg_pass_confirm'] ?? '';
+    $redirect_to  = ! empty( $_POST['redirect_to'] ) ? esc_url_raw( $_POST['redirect_to'] ) : home_url( '/account/' );
+
+    $saved_data = get_transient( 'bsc_otp_flow_' . md5( $email ) );
+
+    if ( ! $saved_data || true !== $saved_data['verified'] ) {
+        wp_safe_redirect( add_query_arg( array( 'auth_error' => 'session_expired', 'tab' => 'create' ), home_url( '/custom-login/' ) ) );
+        exit;
+    }
+
+    if ( empty( $name ) || empty( $password ) || empty( $phone ) ) {
+        wp_safe_redirect( add_query_arg( array( 'auth_error' => 'empty_fields', 'tab' => 'create', 'step' => 'complete_profile', 'pending_email' => urlencode( $email ) ), home_url( '/custom-login/' ) ) );
+        exit;
+    }
+
+    if ( $password !== $pass_confirm ) {
+        wp_safe_redirect( add_query_arg( array( 'auth_error' => 'password_mismatch', 'tab' => 'create', 'step' => 'complete_profile', 'pending_email' => urlencode( $email ) ), home_url( '/custom-login/' ) ) );
         exit;
     }
 
@@ -234,10 +333,10 @@ function bsc_handle_custom_registration() {
         'first_name'   => $name,
     ) );
 
-    if ( ! empty( $phone ) ) {
-        update_user_meta( $user_id, 'phone_number', $phone );
-        update_user_meta( $user_id, 'billing_phone', $phone );
-    }
+    update_user_meta( $user_id, 'phone_number', $phone );
+    update_user_meta( $user_id, 'billing_phone', $phone );
+
+    delete_transient( 'bsc_otp_flow_' . md5( $email ) );
 
     wp_set_current_user( $user_id );
     wp_set_auth_cookie( $user_id, true );
@@ -245,9 +344,6 @@ function bsc_handle_custom_registration() {
     wp_safe_redirect( $redirect_to );
     exit;
 }
-add_action( 'admin_post_nopriv_bsc_custom_register', 'bsc_handle_custom_registration' );
-add_action( 'admin_post_bsc_custom_register', 'bsc_handle_custom_registration' );
-endif;
 
 // =============================================================================
 // ROLE-BASED LOGIN REDIRECT (ADMINS -> WP-ADMIN, OTHERS -> CUSTOM ACCOUNT)
@@ -307,10 +403,10 @@ if ( ! function_exists( 'bsc_generate_cinema_ticket_id' ) ) {
 }
 
 // =============================================================================
-// PROCESS FRONTEND CHECKOUT WITH CUSTOM FORMATTED TICKET ID
+// PROCESS FRONTEND CHECKOUT WITH SSLCOMMERZ GATEWAY INTEGRATION
 // =============================================================================
-add_action( 'admin_post_bsc_process_frontend_checkout', 'bsc_handle_frontend_checkout_submission' );
-function bsc_handle_frontend_checkout_submission() {
+add_action( 'admin_post_bsc_process_frontend_checkout', 'bsc_handle_sslcommerz_direct_checkout' );
+function bsc_handle_sslcommerz_direct_checkout() {
     if ( ! is_user_logged_in() ) {
         wp_safe_redirect( home_url( '/custom-login/' ) );
         exit;
@@ -320,7 +416,6 @@ function bsc_handle_frontend_checkout_submission() {
 
     global $wpdb;
     $table_bookings = $wpdb->prefix . 'bsc_bookings';
-    $table_ledger   = $wpdb->prefix . 'bsc_ledger';
 
     $movie_title    = sanitize_text_field( wp_unslash( $_POST['movie_title'] ?? '' ) );
     $auditorium     = sanitize_text_field( wp_unslash( $_POST['auditorium'] ?? 'Auditorium 1 (23 Seats)' ) );
@@ -331,45 +426,132 @@ function bsc_handle_frontend_checkout_submission() {
     $customer_name  = sanitize_text_field( wp_unslash( $_POST['customer_name'] ?? 'Guest' ) );
     $customer_phone = sanitize_text_field( wp_unslash( $_POST['customer_phone'] ?? '' ) );
     $customer_email = sanitize_email( wp_unslash( $_POST['customer_email'] ?? '' ) );
-    $payment_method = sanitize_text_field( wp_unslash( $_POST['payment_method'] ?? 'Online Portal' ) );
 
+    $tran_id       = 'BSC-' . strtoupper( wp_generate_password( 8, false ) );
     $booking_token = bsc_generate_cinema_ticket_id( 'BCS' );
 
-    $booking_data = array(
-        'booking_token'  => $booking_token,
-        'movie_title'    => $movie_title,
-        'auditorium'     => $auditorium,
-        'showtime'       => $showtime,
-        'ticket_type'    => 'Standard',
-        'seats'          => $seats,
-        'customer_name'  => $customer_name,
-        'customer_phone' => $customer_phone,
-        'customer_email' => $customer_email,
-        'total_amount'   => $total_amount,
-        'payment_method' => $payment_method,
-        'payment_status' => 'Confirmed',
-        'booking_date'   => $booking_date . ' ' . current_time( 'H:i:s' ),
+    // SSLCommerz Credentials
+    $store_id     = 'testmoviex6wn';
+    $store_passwd = 'eZPZ7jbP06wM';
+    $api_url      = 'https://sandbox.sslcommerz.com/gwprocess/v4/api.php';
+
+    $post_data = array(
+        'store_id'         => $store_id,
+        'store_passwd'     => $store_passwd,
+        'total_amount'     => $total_amount,
+        'currency'         => 'BDT',
+        'tran_id'          => $tran_id,
+        'success_url'      => home_url( '/wp-json/bsc/v1/payment-success' ) . '?token=' . urlencode( $booking_token ) . '&tran=' . $tran_id,
+        'fail_url'         => home_url( '/wp-json/bsc/v1/payment-fail' ) . '?tran=' . $tran_id,
+        'cancel_url'       => home_url( '/wp-json/bsc/v1/payment-cancel' ) . '?tran=' . $tran_id,
+        'ipn_url'          => home_url( '/wp-json/bsc/v1/payment-ipn' ),
+        'product_name'     => 'Movie Ticket: ' . $movie_title,
+        'product_category' => 'Entertainment',
+        'product_profile'  => 'non-physical-goods',
+        'cus_name'         => $customer_name,
+        'cus_email'        => $customer_email,
+        'cus_add1'         => 'Noorjahan Cinema Complex',
+        'cus_city'         => 'Sylhet',
+        'cus_postcode'     => '3100',
+        'cus_country'      => 'Bangladesh',
+        'cus_phone'        => $customer_phone,
     );
 
-    $booking_formats = array(
-        '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%s', '%s', '%s'
+    $wpdb->insert(
+        $table_bookings,
+        array(
+            'booking_token'  => $booking_token,
+            'movie_title'    => $movie_title,
+            'auditorium'     => $auditorium,
+            'showtime'       => $showtime,
+            'ticket_type'    => 'Standard',
+            'seats'          => $seats,
+            'customer_name'  => $customer_name,
+            'customer_phone' => $customer_phone,
+            'customer_email' => $customer_email,
+            'total_amount'   => $total_amount,
+            'payment_method' => 'SSLCommerz',
+            'payment_status' => 'Pending',
+            'booking_date'   => $booking_date . ' ' . current_time( 'H:i:s' ),
+        ),
+        array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%s', '%s', '%s' )
     );
 
-    $inserted = $wpdb->insert( $table_bookings, $booking_data, $booking_formats );
+    $response = wp_remote_post( $api_url, array(
+        'body'      => $post_data,
+        'timeout'   => 30,
+        'sslverify' => false,
+    ) );
 
-    if ( false !== $inserted ) {
-        $wpdb->insert(
-            $table_ledger,
-            array(
-                'reference_no'     => $booking_token,
-                'txn_type'         => 'Income',
-                'particulars'      => 'Online Ticket: ' . $movie_title . ' (' . $seats . ')',
-                'method'           => $payment_method,
-                'amount'           => $total_amount,
-                'transaction_date' => current_time( 'mysql' ),
-            ),
-            array( '%s', '%s', '%s', '%s', '%f', '%s' )
+    if ( is_wp_error( $response ) ) {
+        wp_die( '<h3>Connection Error</h3><p>' . esc_html( $response->get_error_message() ) . '</p>', 'Gateway Failure', array( 'back_link' => true ) );
+    }
+
+    $result = json_decode( wp_remote_retrieve_body( $response ), true );
+
+    if ( isset( $result['status'] ) && 'SUCCESS' === $result['status'] && ! empty( $result['GatewayPageURL'] ) ) {
+        wp_redirect( $result['GatewayPageURL'] );
+        exit;
+    } else {
+        $error_reason = $result['failedreason'] ?? 'Unknown gateway initialization error.';
+        wp_die( '<h3>Gateway Initialization Failed</h3><p>' . esc_html( $error_reason ) . '</p>', 'Payment Error', array( 'back_link' => true ) );
+    }
+}
+
+// =============================================================================
+// REGISTER REST API ENDPOINTS FOR SSLCOMMERZ CALLBACKS
+// =============================================================================
+add_action( 'rest_api_init', function () {
+    register_rest_route( 'bsc/v1', '/payment-success', array(
+        'methods'             => array( 'GET', 'POST' ),
+        'callback'            => 'bsc_handle_sslcommerz_success',
+        'permission_callback' => '__return_true',
+    ) );
+
+    register_rest_route( 'bsc/v1', '/payment-fail', array(
+        'methods'             => array( 'GET', 'POST' ),
+        'callback'            => 'bsc_handle_sslcommerz_fail',
+        'permission_callback' => '__return_true',
+    ) );
+
+    register_rest_route( 'bsc/v1', '/payment-cancel', array(
+        'methods'             => array( 'GET', 'POST' ),
+        'callback'            => 'bsc_handle_sslcommerz_cancel',
+        'permission_callback' => '__return_true',
+    ) );
+} );
+
+function bsc_handle_sslcommerz_success( WP_REST_Request $request ) {
+    global $wpdb;
+    $table_bookings = $wpdb->prefix . 'bsc_bookings';
+    $table_ledger   = $wpdb->prefix . 'bsc_ledger';
+
+    $booking_token = sanitize_text_field( $request->get_param( 'token' ) );
+
+    if ( ! empty( $booking_token ) ) {
+        $wpdb->update(
+            $table_bookings,
+            array( 'payment_status' => 'Confirmed' ),
+            array( 'booking_token' => $booking_token ),
+            array( '%s' ),
+            array( '%s' )
         );
+
+        $booking = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_bookings} WHERE booking_token = %s", $booking_token ) );
+        if ( $booking ) {
+            $wpdb->insert(
+                $table_ledger,
+                array(
+                    'reference_no'     => $booking_token,
+                    'txn_type'         => 'Income',
+                    'particulars'      => 'SSLCommerz Ticket: ' . $booking->movie_title . ' (' . $booking->seats . ')',
+                    'method'           => 'SSLCommerz',
+                    'amount'           => $booking->total_amount,
+                    'transaction_date' => current_time( 'mysql' ),
+                ),
+                array( '%s', '%s', '%s', '%s', '%f', '%s' )
+            );
+        }
 
         $thank_you_url = add_query_arg(
             array(
@@ -381,13 +563,20 @@ function bsc_handle_frontend_checkout_submission() {
 
         wp_safe_redirect( $thank_you_url );
         exit;
-    } else {
-        wp_die(
-            '<h3>Booking Error</h3><p>' . esc_html( $wpdb->last_error ) . '</p>',
-            'Reservation Failed',
-            array( 'back_link' => true )
-        );
     }
+
+    wp_safe_redirect( home_url( '/account/' ) );
+    exit;
+}
+
+function bsc_handle_sslcommerz_fail( WP_REST_Request $request ) {
+    wp_safe_redirect( add_query_arg( 'payment', 'failed', home_url( '/checkout/' ) ) );
+    exit;
+}
+
+function bsc_handle_sslcommerz_cancel( WP_REST_Request $request ) {
+    wp_safe_redirect( add_query_arg( 'payment', 'cancelled', home_url( '/checkout/' ) ) );
+    exit;
 }
 
 // =============================================================================

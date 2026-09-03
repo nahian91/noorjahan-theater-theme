@@ -127,12 +127,18 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_bookings}'" ) === $table_booking
     }
 }
 
-// Find default active future slot
+// Find default active future slot (ignoring past dates or past time slots on current day)
 $initial_selected_date = '';
 $initial_selected_time = '';
 
 foreach ( $day_schedules as $day_slot ) {
     $d_val = $day_slot['date'];
+    
+    // Skip entirely past days
+    if ( $d_val < $today_str ) {
+        continue;
+    }
+
     foreach ( (array) $day_slot['times'] as $t_val ) {
         $clean_t   = trim( $t_val );
         $slot_ts   = strtotime( $d_val . ' ' . $clean_t );
@@ -150,7 +156,7 @@ foreach ( $day_schedules as $day_slot ) {
     }
 }
 
-// Fallback to first configured day and time if all are past or full
+// Fallback to first available future or current slot if none matched strictly
 if ( empty( $initial_selected_date ) ) {
     $initial_selected_date = $day_schedules[0]['date'] ?? $today_str;
     $initial_selected_time = $day_schedules[0]['times'][0] ?? '18:00';
@@ -949,6 +955,10 @@ $is_user_logged = is_user_logged_in();
               <select id="selectedScreeningDate" onchange="syncSlotDropdowns(true)" style="width: 100%; padding: 0.35rem 0.5rem; background: #070e11; border: 1px solid var(--ifs-cinema-border); border-radius: 6px; color: #5eead4; font-size: 0.82rem; font-family: var(--ifs-cinema-font-mono); outline: none;">
                 <?php foreach ( $day_schedules as $sched ) : 
                   $clean_d = trim( $sched['date'] );
+                  // Hide past dates from dropdown if desired, or let validation handle it
+                  if ( $clean_d < $today_str ) {
+                      continue;
+                  }
                   $human_d = date_i18n( 'd F Y', strtotime( $clean_d ) );
                   $day_d   = date_i18n( 'l', strtotime( $clean_d ) );
                 ?>
@@ -1040,6 +1050,12 @@ $is_user_logged = is_user_logged_in();
             $row_index = 1;
             foreach ( $day_schedules as $day_slot ) :
               $clean_date = trim( $day_slot['date'] );
+              
+              // Skip past dates in schedule table
+              if ( $clean_date < $today_str ) {
+                  continue;
+              }
+
               $human_date = date_i18n( 'd F Y', strtotime( $clean_date ) );
               $day_name   = date_i18n( 'l', strtotime( $clean_date ) );
               $is_today   = ( $clean_date === $today_str );
@@ -1208,8 +1224,6 @@ $is_user_logged = is_user_logged_in();
       }
       
       syncSlotDropdowns(false, timeVal);
-
-      // Smooth scroll back up to seat map
       document.getElementById('seatSelectorSection').scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -1222,7 +1236,6 @@ $is_user_logged = is_user_logged_in();
       const isToday = (chosenDate === TODAY_STR);
       const now = new Date();
 
-      // Find the schedule configuration for the chosen date
       const currentDaySched = DAY_SCHEDULES.find(d => d.date === chosenDate);
       const timesArray = currentDaySched ? currentDaySched.times : ['18:00'];
 
@@ -1263,10 +1276,8 @@ $is_user_logged = is_user_logged_in();
         timeSelect.appendChild(opt);
       });
 
-      // Try selecting previously chosen time if valid & active
       let targetOption = Array.from(timeSelect.options).find(o => o.value === prevSelectedTime && !o.disabled);
       if (!targetOption) {
-        // Fallback to first enabled option
         targetOption = Array.from(timeSelect.options).find(o => !o.disabled) || timeSelect.options[0];
       }
 
@@ -1274,7 +1285,6 @@ $is_user_logged = is_user_logged_in();
         timeSelect.value = targetOption.value;
       }
 
-      // Auto-update interactive seat map on date/time sync
       refreshSeatMap();
     }
 
@@ -1300,7 +1310,6 @@ $is_user_logged = is_user_logged_in();
           btn.classList.remove('selected');
           btn.setAttribute('aria-label', `Seat ${seatId} Occupied`);
           
-          // Remove from selected list if user had it selected previously
           const sIdx = selectedSeats.findIndex(s => s.id === seatId);
           if (sIdx > -1) {
             selectedSeats.splice(sIdx, 1);
@@ -1378,7 +1387,6 @@ $is_user_logged = is_user_logged_in();
       const grand = subtotal + tax;
       const seatIds = selectedSeats.map(s => s.id).join(',');
 
-      // Store booking parameters in browser session storage for checkout retrieval
       const bookingData = {
         movie_id: MOVIE_ID,
         movie_title: MOVIE_TITLE,
@@ -1392,13 +1400,11 @@ $is_user_logged = is_user_logged_in();
       };
       sessionStorage.setItem('bsc_current_booking', JSON.stringify(bookingData));
 
-      // If not logged in, send them straight to the login portal with a clean return URL
       if (!IS_LOGGED_IN) {
         window.location.href = LOGIN_URL;
         return;
       }
 
-      // If logged in, construct checkout URL cleanly
       const url = new URL(CHECKOUT_PAGE_URL, window.location.origin);
       url.searchParams.set('movie_id', MOVIE_ID);
       url.searchParams.set('date', screeningDate);
@@ -1410,7 +1416,6 @@ $is_user_logged = is_user_logged_in();
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-      // Initialize dynamic slot dropdowns and seat map on page load
       syncSlotDropdowns(false, INITIAL_TIME);
     });
   </script>
