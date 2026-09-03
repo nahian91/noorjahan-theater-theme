@@ -43,15 +43,15 @@
         <?php endif; ?>
       </a>
 
-      <!-- Plain Text Menu -->
+      <!-- Menu with ID for Mobile Script Hook -->
       <?php
       wp_nav_menu( array(
         'theme_location' => 'primary',
         'container'      => false,
-        'items_wrap'     => '<ul class="ifs-cinema-nav-menu">%3$s</ul>',
+        'items_wrap'     => '<ul class="ifs-cinema-nav-menu" id="ifsCinemaNavMenu">%3$s</ul>',
         'fallback_cb'    => function() {
           ?>
-          <ul class="ifs-cinema-nav-menu">
+          <ul class="ifs-cinema-nav-menu" id="ifsCinemaNavMenu">
             <li><a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="ifs-cinema-nav-link <?php echo is_front_page() ? 'ifs-cinema-active' : ''; ?>"><?php esc_html_e( 'Home', 'noorjahan-movie-theater' ); ?></a></li>
             <li><a href="<?php echo esc_url( home_url( '/about/' ) ); ?>" class="ifs-cinema-nav-link <?php echo is_page( 'about' ) ? 'ifs-cinema-active' : ''; ?>"><?php esc_html_e( 'About Us', 'noorjahan-movie-theater' ); ?></a></li>
             <li><a href="<?php echo esc_url( home_url( '/upcoming/' ) ); ?>" class="ifs-cinema-nav-link <?php echo is_page( 'upcoming' ) ? 'ifs-cinema-active' : ''; ?>"><?php esc_html_e( 'Upcoming Movies', 'noorjahan-movie-theater' ); ?></a></li>
@@ -63,13 +63,42 @@
       ) );
       ?>
 
-      <!-- Login / VIP Account Button -->
+      <!-- Login / VIP Account Button & Mobile Toggle -->
       <div style="display: flex; align-items: center; gap: 1rem;">
         <a href="<?php echo esc_url( is_user_logged_in() ? home_url( '/account/' ) : wp_login_url( home_url( '/account/' ) ) ); ?>" class="ifs-cinema-btn ifs-cinema-btn-amber ifs-cinema-btn-sm">
           <svg class="ifs-cinema-svg-icon" style="width:16px; height:16px;" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
           <span><?php echo is_user_logged_in() ? esc_html__( 'My Account', 'noorjahan-movie-theater' ) : esc_html__( 'Login / Account', 'noorjahan-movie-theater' ); ?></span>
         </a>
-        <button class="ifs-cinema-mobile-toggle" aria-label="<?php esc_attr_e( 'Open Navigation', 'noorjahan-movie-theater' ); ?>">☰</button>
+        <button class="ifs-cinema-mobile-toggle" id="ifsMobileToggleBtn" aria-label="<?php esc_attr_e( 'Open Navigation', 'noorjahan-movie-theater' ); ?>">
+          <span style="font-size: 22px; line-height: 1; color: var(--ifs-cinema-brand-amber);">☰</span>
+        </button>
       </div>
     </div>
   </header>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const toggleBtn = document.getElementById('ifsMobileToggleBtn');
+  const navMenu = document.getElementById('ifsCinemaNavMenu');
+
+  if (toggleBtn && navMenu) {
+    toggleBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      navMenu.classList.toggle('ifs-mobile-open');
+    });
+
+    document.addEventListener('click', function(event) {
+      if (!navMenu.contains(event.target) && !toggleBtn.contains(event.target)) {
+        navMenu.classList.remove('ifs-mobile-open');
+      }
+    });
+
+    const navLinks = navMenu.querySelectorAll('a');
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        navMenu.classList.remove('ifs-mobile-open');
+      });
+    });
+  }
+});
+</script>

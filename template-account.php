@@ -196,6 +196,8 @@ $currency_symbol = get_option( 'bsc_currency_symbol', 'BDT' );
     text-align: left;
     transition: all 0.2s ease;
     width: 100%;
+    text-decoration: none;
+    box-sizing: border-box;
   }
 
   .ifs-cinema-tab-nav-btn:hover {

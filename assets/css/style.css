@@ -155,8 +155,8 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 .ifs-cinema-btn-sm { 
-  padding: 9px 15px; 
-  font-size: 0.82rem; 
+  padding: 5px 12px; 
+  font-size: 15px; 
 }
 
 .ifs-cinema-badge {
@@ -167,7 +167,6 @@ img { max-width: 100%; height: auto; display: block; }
   border-radius: var(--ifs-cinema-radius-full);
   font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 1px;
   text-transform: uppercase;
 }
 .ifs-cinema-badge-amber { background: var(--ifs-cinema-brand-amber-subtle); color: var(--ifs-cinema-brand-amber); border: 1px solid var(--ifs-cinema-border-amber); }
@@ -343,9 +342,20 @@ img { max-width: 100%; height: auto; display: block; }
 
 .ifs-cinema-mobile-toggle {
   display: none;
-  font-size: 1.75rem;
-  color: #fff;
+  background: var(--ifs-cinema-bg-elevated);
+  border: 1px solid var(--ifs-cinema-border-light);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ifs-cinema-radius-sm);
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+.ifs-cinema-mobile-toggle:hover {
+  background: var(--ifs-cinema-brand-amber-subtle);
+  border-color: var(--ifs-cinema-brand-amber);
 }
 
 /* ==========================================================================
@@ -396,12 +406,12 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 .ifs-cinema-hero-title {
-	font-size: 50px;
-	font-weight: 900;
-	line-height: 1.5;
-	letter-spacing: -2px;
-	margin: 0.5rem 0 1.25rem;
-	color: #ffffff;
+    font-size: 50px;
+    font-weight: 900;
+    line-height: 1.5;
+    letter-spacing: -2px;
+    margin: 0.5rem 0 1.25rem;
+    color: #ffffff;
 }
 
 .ifs-cinema-hero-specs-hud,
@@ -2880,8 +2890,24 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 /* ==========================================================================
-   20. RESPONSIVE & PRINT MEDIA QUERIES
+   20. MOBILE-FIRST RESPONSIVE & TOUCH OPTIMIZATIONS
    ========================================================================== */
+
+/* Fluid Typography & Root Container Adjustments */
+@media (max-width: 1400px) {
+  .ifs-cinema-container {
+    padding: 0 1.25rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .ifs-cinema-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+  }
+}
+
+/* Tablet & Smaller Laptops (1024px and below) */
 @media (max-width: 1024px) {
   .ifs-cinema-movie-grid-3, 
   .ifs-cinema-gallery-masonry-refined,
@@ -2904,40 +2930,229 @@ img { max-width: 100%; height: auto; display: block; }
   .ifs-cinema-auth-stage,
   .ifs-cinema-contact-grid {
     grid-template-columns: 1fr !important;
-    gap: 2.5rem !important;
+    gap: 2rem !important;
   }
   
   .ifs-cinema-schedule-feature-card {
     grid-template-columns: 1fr !important;
     text-align: left;
+    gap: 1.25rem;
   }
+
   .ifs-cinema-gallery-card-pro.span-2 {
     grid-column: span 1 !important;
   }
-  .ifs-cinema-nav-menu { display: none; }
-  .ifs-cinema-mobile-toggle { display: block; }
+
+  /* Navigation Drawer System Fix */
+  .ifs-cinema-nav-menu {
+    display: none !important;
+    position: fixed;
+    top: 75px;
+    left: 0;
+    width: 100%;
+    background: var(--ifs-cinema-bg-surface);
+    border-bottom: 1px solid var(--ifs-cinema-border-light);
+    flex-direction: column;
+    padding: 1.5rem 2rem;
+    gap: 1.25rem;
+    z-index: 9999;
+    box-sizing: border-box;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+  .ifs-cinema-nav-menu.ifs-mobile-open {
+    display: flex !important;
+  }
+  .ifs-cinema-mobile-toggle {
+    display: flex !important;
+  }
+
   .ifs-cinema-account-sidebar,
-  .ifs-cinema-order-summary-card { position: static; }
-  .ifs-cinema-pass-right-qr { border-left: none; border-top: 2px dashed var(--ifs-cinema-border-light); }
-  .ifs-cinema-poster-frame-3d { max-width: 340px; margin: 0 auto; }
+  .ifs-cinema-order-summary-card { 
+    position: static; 
+  }
+
+  .ifs-cinema-pass-right-qr { 
+    border-left: none; 
+    border-top: 2px dashed var(--ifs-cinema-border-light); 
+  }
+
+  .ifs-cinema-poster-frame-3d { 
+    max-width: 300px; 
+    margin: 0 auto; 
+  }
+
   .ifs-cinema-seating-arena {
     border-right: none;
     border-bottom: 1px solid var(--ifs-cinema-border-subtle);
+    padding: 2rem 1rem;
   }
-  .ifs-cinema-auth-showcase { display: none; }
-  .ifs-cinema-auth-workspace { padding: 3rem 2rem; }
+
+  .ifs-cinema-auth-showcase { 
+    display: none; 
+  }
+  .ifs-cinema-auth-workspace { 
+    padding: 2.5rem 1.75rem; 
+  }
+
+  .ifs-cinema-hero-title,
+  .ifs-cinema-about-hero h1,
+  .ifs-cinema-gallery-hero h1,
+  .ifs-cinema-contact-hero h1,
+  .ifs-cinema-checkout-hero h1,
+  .ifs-cinema-thanks-hero h1 {
+    font-size: 34px !important;
+    letter-spacing: -1px;
+  }
+
+  .ifs-cinema-hero-main-title {
+    font-size: 2.5rem !important;
+  }
 }
 
+/* Mobile Smartphones (768px and below) */
 @media (max-width: 768px) {
-  .ifs-cinema-form-grid-2,
-  .ifs-cinema-form-row { 
-    grid-template-columns: 1fr; 
-    gap: 0; 
+  body {
+    font-size: 15px;
   }
-  .ifs-cinema-payment-grid { grid-template-columns: 1fr; }
-  .ifs-cinema-checkout-steps { gap: 1rem; }
+
+  .ifs-cinema-topbar-inner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+  }
+  .ifs-cinema-topbar-info {
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .ifs-cinema-navbar {
+    padding: 12px 0;
+  }
+
+  .ifs-cinema-hero-stage,
+  .ifs-cinema-about-hero,
+  .ifs-cinema-gallery-hero,
+  .ifs-cinema-contact-hero,
+  .ifs-cinema-checkout-hero,
+  .ifs-cinema-thanks-hero {
+    padding: 4rem 0 3rem;
+  }
+
+  .ifs-cinema-hero-stats-deck,
+  .ifs-cinema-hero-specs-bar,
+  .ifs-cinema-movie-credits-grid,
+  .ifs-cinema-form-grid-2,
+  .ifs-cinema-form-row,
+  .ifs-cinema-payment-grid,
+  .ifs-cinema-pass-grid-specs {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+
+  .ifs-cinema-section-title {
+    margin-bottom: 60px;
+    text-align: center;
+  }
+  .ifs-cinema-section-title h4 {
+    font-size: 28px !important;
+  }
+
+  /* Seat Selection Matrix Touch Scaling & Horizontal Scroll Fix */
+  .ifs-cinema-seat-scroll-container,
+  .ifs-cinema-seat-scroll {
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ifs-cinema-seating-matrix {
+    min-width: 440px;
+    transform: scale(0.92);
+    transform-origin: top center;
+  }
+  .ifs-cinema-seat-node {
+    width: 36px;
+    height: 34px;
+  }
+  .ifs-cinema-seat-node.couple {
+    width: 76px;
+  }
+  .ifs-cinema-seat-number {
+    font-size: 0.7rem;
+  }
+
+  .ifs-cinema-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .ifs-cinema-footer-bottom-bar {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .ifs-cinema-ticket-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ifs-cinema-user-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ifs-cinema-modal-body {
+    padding: 1.25rem;
+  }
+  .ifs-cinema-booking-panel {
+    max-height: 96vh;
+    border-radius: 12px;
+  }
 }
 
+/* Small Mobile Devices (480px and below) */
+@media (max-width: 480px) {
+  .ifs-cinema-container {
+    padding: 0 1rem;
+  }
+
+  .ifs-cinema-hero-title,
+  .ifs-cinema-about-hero h1,
+  .ifs-cinema-gallery-hero h1,
+  .ifs-cinema-contact-hero h1,
+  .ifs-cinema-checkout-hero h1,
+  .ifs-cinema-thanks-hero h1 {
+    font-size: 28px !important;
+  }
+
+.ifs-cinema-btn {
+	width: 100%;
+	padding: 5px 10px;
+	font-size: 12px;
+}
+.ifs-cinema-upcoming-card{
+  flex-direction: column;
+}
+
+  .ifs-cinema-hero-cta-stack {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .ifs-cinema-poster-wrap,
+  .ifs-cinema-upcoming-poster-box {
+    height: 380px;
+  }
+
+  .ifs-cinema-gallery-card-pro,
+  .ifs-cinema-gallery-card {
+    height: 280px;
+  }
+  .ifs-cinema-topbar{
+    display: none;
+  }
+}
+
+/* Print Stylesheet Protection */
 @media print {
   .ifs-cinema-topbar,
   .ifs-cinema-navbar,

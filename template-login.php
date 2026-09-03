@@ -3,7 +3,7 @@
  * Template Name: Auth Access / VIP Portal Page
  * Description: Simplified 2-Tab Authentication Portal (Sign In & Create Account).
  * - Sign In: Email + Password + Google Login
- * - Create Account: Name, Email + Password + Google Login
+ * - Create Account: Name, Email + Optional Phone + Password + Google Login
  *
  * @package Noorjahan_Movie_Theater
  */
@@ -20,7 +20,7 @@ if ( isset( $_GET['login'] ) && $_GET['login'] === 'failed' ) {
     $login_error = __( 'Invalid email or password. Please check your credentials.', 'noorjahan-movie-theater' );
 }
 
-$redirect_to_param = isset( $_GET['redirect_to'] ) ? esc_url( $_GET['redirect_to'] ) : home_url( '/account/' );
+$redirect_to_param = isset( $_GET['redirect_to'] ) ? esc_url_raw( $_GET['redirect_to'] ) : home_url( '/account/' );
 
 // Google OAuth Login URL handler route
 $google_login_url = home_url( '/account/?bsc_auth=google_callback' );
@@ -277,6 +277,7 @@ get_header(); ?>
     <div class="ifs-auth-pane" id="auth-pane-create" style="display: none;">
       <form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
         <input type="hidden" name="action" value="bsc_custom_register">
+        <input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_to_param ); ?>">
 
         <div class="ifs-auth-field-group">
           <label><?php esc_html_e( 'Full Name', 'noorjahan-movie-theater' ); ?> *</label>
@@ -286,6 +287,11 @@ get_header(); ?>
         <div class="ifs-auth-field-group">
           <label><?php esc_html_e( 'Email Address', 'noorjahan-movie-theater' ); ?> *</label>
           <input type="email" name="reg_email" class="ifs-auth-input" placeholder="name@domain.com" required>
+        </div>
+
+        <div class="ifs-auth-field-group">
+          <label><?php esc_html_e( 'Mobile Phone (Optional)', 'noorjahan-movie-theater' ); ?></label>
+          <input type="tel" name="reg_phone" class="ifs-auth-input" placeholder="+880 1700-000000">
         </div>
 
         <div class="ifs-auth-field-group">
@@ -318,6 +324,31 @@ get_header(); ?>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // Check if user has active selected booking items stored in browser session storage
+    const rawBooking = sessionStorage.getItem('bsc_current_booking');
+    if (rawBooking) {
+      try {
+        const booking = JSON.parse(rawBooking);
+        if (booking && booking.seats && booking.seats.length > 0) {
+          // Build checkout URL with the saved movie, date, time, seats, and total
+          const checkoutUrl = new URL('<?php echo esc_url_raw( home_url( '/checkout/' ) ); ?>', window.location.origin);
+          checkoutUrl.searchParams.set('movie_id', booking.movie_id);
+          checkoutUrl.searchParams.set('date', booking.screening_date);
+          checkoutUrl.searchParams.set('time', booking.screening_time);
+          checkoutUrl.searchParams.set('seats', booking.seats.join(','));
+          checkoutUrl.searchParams.set('total', booking.grand_total);
+
+          // Update both the Sign In and Create Account form hidden redirect_to inputs dynamically
+          document.querySelectorAll('input[name="redirect_to"]').forEach(input => {
+            input.value = checkoutUrl.toString();
+          });
+        }
+      } catch (e) {
+        console.error('Error parsing session storage booking info', e);
+      }
+    }
+
+    // Tab switching logic
     const btnSignin = document.getElementById('tab-btn-signin');
     const btnCreate = document.getElementById('tab-btn-create');
     const paneSignin = document.getElementById('auth-pane-signin');

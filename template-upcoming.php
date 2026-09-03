@@ -39,18 +39,13 @@ $upcoming_movies = $wpdb->get_results(
             $title      = ! empty( $movie->title ) ? esc_html( $movie->title ) : 'Upcoming Feature';
             $genre      = ! empty( $movie->genre ) ? esc_html( $movie->genre ) : 'Cinematic Release';
             $short_desc = ! empty( $movie->short_description ) ? esc_html( $movie->short_description ) : '';
-            
-            // Parse release dates from JSON
-            $rel_dates = json_decode( $movie->release_date, true );
-            $display_date = is_array( $rel_dates ) ? implode(', ', $rel_dates) : $movie->release_date;
-            if ( empty( $display_date ) ) { $display_date = 'Coming Soon'; }
           ?>
             <div class="ifs-cinema-upcoming-card-pro" style="cursor: default;">
               <div class="ifs-cinema-upcoming-poster-box">
                 <img src="<?php echo $poster_url; ?>" 
                      alt="<?php echo esc_attr( $title ); ?>"
                      onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80';">
-                <span class="ifs-cinema-upcoming-date-badge"><?php echo esc_html( strtoupper( $display_date ) ); ?></span>
+                <span class="ifs-cinema-upcoming-date-badge"><?php esc_html_e( 'COMING SOON', 'noorjahan-movie-theater' ); ?></span>
               </div>
               <div class="ifs-cinema-upcoming-details-box">
                 <span style="font-size:0.75rem; color:var(--ifs-cinema-brand-amber); font-weight:800; text-transform:uppercase;"><?php echo $genre; ?></span>

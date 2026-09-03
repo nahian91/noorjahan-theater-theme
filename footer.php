@@ -122,8 +122,16 @@
       </div>
     </div>
 
-    <div class="ifs-cinema-footer-bottom-bar">
+    <!-- Bottom Bar with Copyright & Developer Credit Logo -->
+    <div class="ifs-cinema-footer-bottom-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
       <p>&copy; <?php echo esc_html( date_i18n( 'Y' ) ); ?> <?php bloginfo( 'name' ); ?>. <?php esc_html_e( 'All rights reserved.', 'noorjahan-movie-theater' ); ?></p>
+      
+      <div class="ifs-cinema-dev-credit" style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem;">
+        <span><?php esc_html_e( 'Design & Developed by', 'noorjahan-movie-theater' ); ?></span>
+        <a href="https://infinityflamesoft.com" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; text-decoration: none;">
+          <img src="<?php echo esc_url( get_theme_file_uri( '/assets/img/ifs-logo.png' ) ); ?>" alt="<?php esc_attr_e( 'Infinity Flame Soft', 'noorjahan-movie-theater' ); ?>" style="height: 20px; width: auto; display: block;"> &nbsp;Infinity Flame Soft
+        </a>
+      </div>
     </div>
   </div>
 </footer>

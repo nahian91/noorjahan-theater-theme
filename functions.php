@@ -205,3 +205,102 @@ if ( defined( 'JETPACK__VERSION' ) ) {
 	require get_template_directory() . '/inc/jetpack.php';
 }
 
+/**
+ * Custom Backend Handlers for VIP Portal Sign-In & Registration (Safe Declarations)
+ */
+if ( ! function_exists( 'bsc_handle_custom_login' ) ) :
+function bsc_handle_custom_login() {
+    if ( ! empty( $_POST['log'] ) && ! empty( $_POST['pwd'] ) ) {
+        $creds = array(
+            'user_login'    => sanitize_email( $_POST['log'] ),
+            'user_password' => $_POST['pwd'],
+            'remember'      => true,
+        );
+
+        $user = wp_signon( $creds, is_ssl() );
+
+        if ( ! is_wp_error( $user ) ) {
+            $redirect_to = ! empty( $_POST['redirect_to'] ) ? esc_url_raw( $_POST['redirect_to'] ) : home_url( '/account/' );
+            wp_redirect( $redirect_to );
+            exit;
+        }
+    }
+
+    $login_page = home_url( '/account/' );
+    wp_redirect( add_query_arg( 'login', 'failed', $login_page ) );
+    exit;
+}
+add_action( 'admin_post_nopriv_bsc_custom_login', 'bsc_handle_custom_login' );
+add_action( 'admin_post_bsc_custom_login', 'bsc_handle_custom_login' );
+endif;
+
+if ( ! function_exists( 'bsc_handle_custom_registration' ) ) :
+function bsc_handle_custom_registration() {
+    if ( ! empty( $_POST['reg_email'] ) && ! empty( $_POST['reg_pass'] ) ) {
+        $email       = sanitize_email( $_POST['reg_email'] );
+        $password    = $_POST['reg_pass'];
+        $name        = ! empty( $_POST['reg_name'] ) ? sanitize_text_field( $_POST['reg_name'] ) : 'VIP Member';
+        $phone       = ! empty( $_POST['reg_phone'] ) ? sanitize_text_field( $_POST['reg_phone'] ) : '';
+        $redirect_to = ! empty( $_POST['redirect_to'] ) ? esc_url_raw( $_POST['redirect_to'] ) : home_url( '/account/' );
+
+        if ( email_exists( $email ) ) {
+            $login_page = home_url( '/account/' );
+            wp_redirect( add_query_arg( 'register', 'email_exists', $login_page ) );
+            exit;
+        }
+
+        $user_id = wp_create_user( $email, $password, $email );
+
+        if ( ! is_wp_error( $user_id ) ) {
+            wp_update_user( array(
+                'ID'           => $user_id,
+                'display_name' => $name,
+                'first_name'   => $name,
+            ) );
+
+            if ( ! empty( $phone ) ) {
+                update_user_meta( $user_id, 'phone_number', $phone );
+            }
+
+            $creds = array(
+                'user_login'    => $email,
+                'user_password' => $password,
+                'remember'      => true,
+            );
+            $user = wp_signon( $creds, is_ssl() );
+
+            if ( ! is_wp_error( $user ) ) {
+                wp_redirect( $redirect_to );
+                exit;
+            }
+        }
+    }
+
+    $login_page = home_url( '/account/' );
+    wp_redirect( add_query_arg( 'register', 'failed', $login_page ) );
+    exit;
+}
+add_action( 'admin_post_nopriv_bsc_custom_register', 'bsc_handle_custom_registration' );
+add_action( 'admin_post_bsc_custom_register', 'bsc_handle_custom_registration' );
+endif;
+
+if ( ! function_exists( 'bsc_force_login_redirect' ) ) :
+function bsc_force_login_redirect( $redirect_to, $request, $user ) {
+    if ( isset( $user->ID ) ) {
+        if ( in_array( 'administrator', (array) $user->roles, true ) ) {
+            return $redirect_to;
+        }
+        return home_url( '/account/' );
+    }
+    return $redirect_to;
+}
+add_filter( 'login_redirect', 'bsc_force_login_redirect', 99, 3 );
+endif;
+
+function ifs_cinema_site_favicon() {
+    $favicon_url = get_theme_file_uri( '/assets/img/favicon.png' );
+    echo '<link rel="icon" href="' . esc_url( $favicon_url ) . '" sizes="32x32" />' . "\n";
+    echo '<link rel="icon" href="' . esc_url( $favicon_url ) . '" sizes="192x192" />' . "\n";
+    echo '<link rel="apple-touch-icon" href="' . esc_url( $favicon_url ) . '" />' . "\n";
+}
+add_action( 'wp_head', 'ifs_cinema_site_favicon' );

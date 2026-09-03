@@ -172,39 +172,16 @@ if ( empty( $cast_list ) ) {
     );
 }
 
-// Retrieve Dynamic Pricing Tiers from Settings Repeater
-$pricing_tiers = get_option('bsc_pricing_tiers', array(
-    array('title' => 'Standard Seating', 'amount' => '400', 'description' => 'Applied across standard Rows B, C, D.'),
-    array('title' => 'VIP Motorized Recliner', 'amount' => '500', 'description' => 'Applied across premium Row A.')
-));
-
-// Fallback prices for JS calculations and determine lowest price dynamically
-$standard_price = 400.00;
-$vip_price      = 500.00;
-$lowest_price   = 400.00;
-
-if ( ! empty( $pricing_tiers ) && is_array( $pricing_tiers ) ) {
-    $tier_amounts = array();
-    foreach ( $pricing_tiers as $tier ) {
-        $amount_num = isset( $tier['amount'] ) ? floatval( $tier['amount'] ) : 0;
-        if ( $amount_num > 0 ) {
-            $tier_amounts[] = $amount_num;
-        }
-        if ( stripos( $tier['title'], 'vip' ) !== false ) {
-            $vip_price = $amount_num;
-        } else {
-            $standard_price = $amount_num;
-        }
-    }
-    if ( ! empty( $tier_amounts ) ) {
-        $lowest_price = min( $tier_amounts );
-    }
-}
+// Retrieve Direct Ticket Prices from Settings Options
+$standard_price = floatval( get_option( 'bsc_standard_price', 400.00 ) );
+$vip_price      = floatval( get_option( 'bsc_vip_price', 500.00 ) );
+$lowest_price   = min( $standard_price, $vip_price );
 
 $service_tax_pct = floatval( get_option( 'bsc_service_charge_pct', 5.00 ) );
 $enable_tax      = get_option( 'bsc_enable_tax', 'yes' );
-$currency_symbol = get_option( 'bsc_currency_symbol', 'BDT' );
+$currency_symbol = get_option( 'bsc_currency_symbol', '৳' );
 $checkout_url    = home_url( '/checkout/' );
+$login_page_url  = home_url( '/account/' );
 
 // Current Page URL redirection support for login gate
 global $wp;
@@ -212,7 +189,7 @@ $current_page_url = home_url( add_query_arg( array(), $wp->request ) );
 if ( ! empty( $_SERVER['QUERY_STRING'] ) ) {
     $current_page_url .= '?' . $_SERVER['QUERY_STRING'];
 }
-$login_url      = wp_login_url( $current_page_url );
+$login_url      = add_query_arg( 'redirect_to', urlencode( $current_page_url ), $login_page_url );
 $is_user_logged = is_user_logged_in();
 ?>
 
@@ -931,14 +908,14 @@ $is_user_logged = is_user_logged_in();
 
         <!-- Columnar Tiered Legend -->
         <div class="ifs-cinema-legend">
-          <?php foreach ( $pricing_tiers as $index => $tier ): 
-            $bullet_bg = ($index === 0) ? 'var(--ifs-cinema-seat-standard)' : 'var(--ifs-cinema-seat-vip)';
-          ?>
-            <div class="ifs-cinema-legend-item">
-              <div class="ifs-cinema-legend-bullet" style="background: <?php echo $bullet_bg; ?>;"></div>
-              <span><?php echo esc_html($tier['title']); ?> (<?php echo esc_html( $currency_symbol ); ?> <?php echo number_format( floatval($tier['amount']), 0 ); ?>)</span>
-            </div>
-          <?php endforeach; ?>
+          <div class="ifs-cinema-legend-item">
+            <div class="ifs-cinema-legend-bullet" style="background: var(--ifs-cinema-seat-standard);"></div>
+            <span>Standard Seating (<?php echo esc_html( $currency_symbol ); ?> <?php echo number_format( $standard_price, 0 ); ?>)</span>
+          </div>
+          <div class="ifs-cinema-legend-item">
+            <div class="ifs-cinema-legend-bullet" style="background: var(--ifs-cinema-seat-vip);"></div>
+            <span>VIP Motorized Recliners (<?php echo esc_html( $currency_symbol ); ?> <?php echo number_format( $vip_price, 0 ); ?>)</span>
+          </div>
           <div class="ifs-cinema-legend-item">
             <div class="ifs-cinema-legend-bullet" style="background: var(--ifs-cinema-seat-selected);"></div>
             <span><?php esc_html_e( 'Selected', 'noorjahan-movie-theater' ); ?></span>
@@ -961,7 +938,10 @@ $is_user_logged = is_user_logged_in();
           <div style="background: rgba(13, 148, 136, 0.08); border: 1px solid rgba(13, 148, 136, 0.25); padding: 0.85rem; border-radius: 10px; margin-bottom: 1.25rem;">
             <div style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--ifs-cinema-brand-amber); margin-bottom: 0.6rem; display: flex; align-items: center; justify-content: space-between;">
               <span>Active Booking Slot</span>
-              <span>⚙️ Config</span>
+              <span style="display:inline-flex; align-items:center; gap:4px;">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                Config
+              </span>
             </div>
             
             <div style="margin-bottom: 0.6rem;">
@@ -1103,7 +1083,10 @@ $is_user_logged = is_user_logged_in();
                             <?php echo $is_disabled ? 'disabled aria-disabled="true"' : ''; ?>
                             style="padding: 6px 14px; font-size: 0.8rem; font-weight: 800; cursor: <?php echo $is_disabled ? 'not-allowed' : 'pointer'; ?>; display: inline-flex; align-items: center; gap: 6px; <?php echo $is_next_active ? 'background:var(--ifs-cinema-brand-amber); color:#000; border-color:var(--ifs-cinema-brand-amber);' : ''; ?>" 
                             onclick="<?php echo $is_disabled ? 'return false;' : 'selectScreeningSlot(\'' . esc_js( $clean_date ) . '\', \'' . esc_js( $clean_time ) . '\')'; ?>">
-                      <span>⏰ <?php echo esc_html( $formatted_t ); ?></span>
+                      <span style="display:inline-flex; align-items:center; gap:4px;">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="vertical-align:-1px;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                        <?php echo esc_html( $formatted_t ); ?>
+                      </span>
                       
                       <?php if ( $is_passed ) : ?>
                         <span style="color:#64748b; font-weight:900;">• Closed</span>
@@ -1387,13 +1370,6 @@ $is_user_logged = is_user_logged_in();
         return;
       }
 
-      // Automatically redirect to Sign-In page if guest is not logged in
-      if (!IS_LOGGED_IN) {
-        alert('Please log in to your VIP account to complete your ticket reservation.');
-        window.location.href = LOGIN_URL;
-        return;
-      }
-
       const screeningDate = document.getElementById('selectedScreeningDate').value;
       const screeningTime = document.getElementById('selectedScreeningTime').value;
 
@@ -1416,7 +1392,13 @@ $is_user_logged = is_user_logged_in();
       };
       sessionStorage.setItem('bsc_current_booking', JSON.stringify(bookingData));
 
-      // Construct redirection URL with URL query params
+      // If not logged in, send them straight to the login portal with a clean return URL
+      if (!IS_LOGGED_IN) {
+        window.location.href = LOGIN_URL;
+        return;
+      }
+
+      // If logged in, construct checkout URL cleanly
       const url = new URL(CHECKOUT_PAGE_URL, window.location.origin);
       url.searchParams.set('movie_id', MOVIE_ID);
       url.searchParams.set('date', screeningDate);
