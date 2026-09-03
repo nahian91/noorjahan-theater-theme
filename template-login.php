@@ -1,7 +1,7 @@
 <?php
 /**
  * Template Name: Auth Access / VIP Portal Page
- * Description: Multi-step email OTP verification and profile creation portal.
+ * Description: Multi-step email OTP verification and profile creation portal with timer and resend support.
  *
  * @package Noorjahan_Movie_Theater
  */
@@ -199,7 +199,7 @@ get_header(); ?>
     <?php endif; ?>
 
     <?php if ( 'create' === $active_tab && 'verify_otp' === $reg_step ) : ?>
-      <!-- STEP 2: VERIFY OTP FORM -->
+      <!-- STEP 2: VERIFY OTP FORM WITH COUNTDOWN TIMER & RESEND -->
       <form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
         <input type="hidden" name="action" value="bsc_verify_email_otp">
         <input type="hidden" name="pending_email" value="<?php echo esc_attr( $pending_email ); ?>">
@@ -207,13 +207,31 @@ get_header(); ?>
 
         <div class="ifs-auth-field-group">
           <label><?php esc_html_e( '6-Digit Verification Code', 'bcs-screen-manager' ); ?> *</label>
-          <input type="text" name="entered_otp" class="ifs-auth-input no-toggle" placeholder="123456" maxlength="6" style="text-align: center; font-size: 1.2rem; letter-spacing: 0.2em; font-family: monospace;" required>
+          <input type="text" name="entered_otp" id="entered_otp" class="ifs-auth-input no-toggle" placeholder="123456" maxlength="6" style="text-align: center; font-size: 1.2rem; letter-spacing: 0.2em; font-family: monospace;" required>
         </div>
 
-        <button type="submit" class="ifs-auth-submit-btn">
+        <!-- Live Countdown Timer Display -->
+        <div style="text-align: center; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--auth-text-muted);">
+          <span id="otpTimerText"><?php esc_html_e( 'Code expires in:', 'bcs-screen-manager' ); ?> <strong id="timerDisplay" style="color: var(--auth-amber);">05:00</strong></span>
+        </div>
+
+        <button type="submit" id="verifyOtpBtn" class="ifs-auth-submit-btn">
           <?php esc_html_e( 'Verify Code', 'bcs-screen-manager' ); ?>
         </button>
       </form>
+
+      <!-- Resend OTP Option Form -->
+      <div style="text-align: center; margin-top: 1.25rem; font-size: 0.82rem; color: var(--auth-text-muted);">
+        <span><?php esc_html_e( "Didn't receive the code?", 'bcs-screen-manager' ); ?></span>
+        <form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline; margin-left: 4px;">
+          <input type="hidden" name="action" value="bsc_send_email_otp">
+          <input type="hidden" name="reg_email" value="<?php echo esc_attr( $pending_email ); ?>">
+          <input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_to_param ); ?>">
+          <button type="submit" style="background:none; border:none; color:var(--auth-amber); font-weight:800; cursor:pointer; padding:0; text-decoration:underline;">
+            <?php esc_html_e( 'Resend Code', 'bcs-screen-manager' ); ?>
+          </button>
+        </form>
+      </div>
 
     <?php elseif ( 'create' === $active_tab && 'complete_profile' === $reg_step ) : ?>
       <!-- STEP 3: FINALIZE PROFILE FORM -->
@@ -343,6 +361,54 @@ get_header(); ?>
         }
       });
     });
+
+    // Persistent Countdown Timer using localStorage (Survives Page Refreshes)
+    const timerDisplay = document.getElementById('timerDisplay');
+    const otpTimerText = document.getElementById('otpTimerText');
+    const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+    const enteredOtpInput = document.getElementById('entered_otp');
+
+    if (timerDisplay) {
+      const storageKey = 'bsc_otp_expire_time_' + "<?php echo esc_js( $pending_email ); ?>";
+      let expirationTime = localStorage.getItem(storageKey);
+      const now = Math.floor(Date.now() / 1000);
+
+      // If no timer exists or it has already expired, set a new 5-minute (300 seconds) target
+      if (!expirationTime || now >= parseInt(expirationTime, 10)) {
+        expirationTime = now + 300;
+        localStorage.setItem(storageKey, expirationTime);
+      }
+
+      const countdown = setInterval(function () {
+        const currentTime = Math.floor(Date.now() / 1000);
+        let duration = parseInt(expirationTime, 10) - currentTime;
+
+        if (duration <= 0) {
+          clearInterval(countdown);
+          localStorage.removeItem(storageKey);
+          timerDisplay.textContent = "00:00";
+          if (otpTimerText) {
+            otpTimerText.innerHTML = '<span style="color: #ef4444; font-weight: 800;">Code has expired. Please request a new one.</span>';
+          }
+          if (verifyOtpBtn) {
+            verifyOtpBtn.disabled = true;
+            verifyOtpBtn.style.opacity = '0.5';
+            verifyOtpBtn.style.cursor = 'not-allowed';
+          }
+          if (enteredOtpInput) {
+            enteredOtpInput.disabled = true;
+          }
+        } else {
+          let minutes = Math.floor(duration / 60);
+          let seconds = duration % 60;
+
+          minutes = minutes < 10 ? "0" + minutes : minutes;
+          seconds = seconds < 10 ? "0" + seconds : seconds;
+
+          timerDisplay.textContent = minutes + ":" + seconds;
+        }
+      }, 1000);
+    }
   });
 </script>
 

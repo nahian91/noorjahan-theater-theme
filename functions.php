@@ -201,7 +201,7 @@ add_action( 'admin_post_bsc_custom_login', 'bsc_handle_custom_login' );
 endif;
 
 // =============================================================================
-// MULTI-STEP OTP REGISTRATION HANDLERS
+// MULTI-STEP OTP REGISTRATION HANDLERS (WITH HTML EMAIL)
 // =============================================================================
 
 // Step 1: Send OTP to Email
@@ -231,9 +231,34 @@ function bsc_handle_send_email_otp() {
     );
     set_transient( 'bsc_otp_flow_' . md5( $email ), $temp_data, 300 );
 
-    $subject = 'Your Cinema Verification Code';
-    $message = sprintf( "Your OTP verification code is: %s\nThis code will expire in 5 minutes.", $otp_code );
-    $headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+    $subject = 'Your Verification Code - Noorjahan Movie Theater';
+    $message = '
+    <div style="background-color: #070e11; padding: 40px 0; font-family: \'Plus Jakarta Sans\', Arial, sans-serif; color: #f8fafc;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px; background-color: #0b171c; border: 1px solid #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+            <tr>
+                <td style="padding: 30px 40px; text-align: center; border-bottom: 1px solid #1e293b;">
+                    <h2 style="margin: 0; color: #f59e0b; font-size: 22px; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase;">Noorjahan Cinemas</h2>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 40px;">
+                    <p style="margin: 0 0 20px; font-size: 15px; color: #94a3b8; line-height: 1.6;">Hello,</p>
+                    <p style="margin: 0 0 25px; font-size: 15px; color: #f8fafc; line-height: 1.6;">Thank you for registering. Please use the secure verification code below to verify your email address. This code will expire in <strong>5 minutes</strong>.</p>
+                    <div style="background-color: #060d10; border: 2px dashed #f59e0b; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 25px;">
+                        <span style="font-size: 36px; font-weight: 900; color: #f59e0b; letter-spacing: 0.25em; font-family: monospace; display: inline-block;">' . $otp_code . '</span>
+                    </div>
+                    <p style="margin: 0; font-size: 13px; color: #64748b; line-height: 1.5; text-align: center;">If you did not request this code, please ignore this email.</p>
+                </td>
+            </tr>
+            <tr>
+                <td style="background-color: #060d10; padding: 20px; text-align: center; border-top: 1px solid #1e293b;">
+                    <p style="margin: 0; font-size: 11px; color: #64748b;">&copy; ' . date('Y') . ' Noorjahan Movie Theater. All rights reserved.</p>
+                </td>
+            </tr>
+        </table>
+    </div>';
+    
+    $headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
     wp_mail( $email, $subject, $message, $headers );
 
@@ -499,6 +524,75 @@ function bsc_handle_sslcommerz_direct_checkout() {
 }
 
 // =============================================================================
+// SEND ORDER CONFIRMATION EMAIL UPON SUCCESSFUL BOOKING & PAYMENT
+// =============================================================================
+function bsc_send_order_confirmation_email( $booking_token ) {
+    global $wpdb;
+    $table_bookings = $wpdb->prefix . 'bsc_bookings';
+
+    $booking = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_bookings} WHERE booking_token = %s", $booking_token ) );
+
+    if ( ! $booking || empty( $booking->customer_email ) ) {
+        return;
+    }
+
+    $to      = $booking->customer_email;
+    $subject = sprintf( 'Booking Confirmed: %s [%s]', $booking->movie_title, $booking->booking_token );
+
+    $message = '
+    <div style="background-color: #070e11; padding: 40px 0; font-family: \'Plus Jakarta Sans\', Arial, sans-serif; color: #f8fafc;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #0b171c; border: 1px solid #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+            <tr>
+                <td style="padding: 30px 40px; text-align: center; border-bottom: 1px solid #1e293b;">
+                    <h2 style="margin: 0; color: #f59e0b; font-size: 22px; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase;">Noorjahan Movie Theater</h2>
+                    <p style="margin: 5px 0 0; font-size: 13px; color: #0d9488; font-weight: 700; text-transform: uppercase;">Official Booking Confirmation</p>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 40px;">
+                    <p style="margin: 0 0 15px; font-size: 15px; color: #94a3b8;">Dear <strong>' . esc_html( $booking->customer_name ) . '</strong>,</p>
+                    <p style="margin: 0 0 25px; font-size: 15px; color: #f8fafc; line-height: 1.6;">Thank you for your booking! Your payment has been successfully processed via <strong>' . esc_html( $booking->payment_method ) . '</strong>. Below are your ticket details:</p>
+                    
+                    <table width="100%" cellpadding="12" cellspacing="0" style="background-color: #060d10; border: 1px solid #1e293b; border-radius: 12px; margin-bottom: 25px;">
+                        <tr>
+                            <td style="font-size: 13px; color: #64748b; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid #1e293b;">Ticket Reference</td>
+                            <td style="font-size: 15px; color: #f59e0b; font-weight: 900; font-family: monospace; text-align: right; border-bottom: 1px solid #1e293b;">' . esc_html( $booking->booking_token ) . '</td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 13px; color: #64748b; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid #1e293b;">Movie Title</td>
+                            <td style="font-size: 15px; color: #fff; font-weight: 800; text-align: right; border-bottom: 1px solid #1e293b;">' . esc_html( $booking->movie_title ) . '</td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 13px; color: #64748b; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid #1e293b;">Auditorium & Showtime</td>
+                            <td style="font-size: 14px; color: #fff; text-align: right; border-bottom: 1px solid #1e293b;">' . esc_html( $booking->auditorium ) . '<br><span style="color: #0d9488; font-weight: 700;">' . esc_html( $booking->showtime ) . ' (' . esc_html( $booking->booking_date ) . ')</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 13px; color: #64748b; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid #1e293b;">Selected Seats</td>
+                            <td style="font-size: 14px; color: #f8fafc; font-weight: 800; font-family: monospace; text-align: right; border-bottom: 1px solid #1e293b;">' . esc_html( $booking->seats ) . '</td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 13px; color: #64748b; font-weight: 800; text-transform: uppercase;">Total Paid Amount</td>
+                            <td style="font-size: 16px; color: #f59e0b; font-weight: 900; font-family: monospace; text-align: right;">৳ ' . number_format( floatval( $booking->total_amount ), 2 ) . '</td>
+                        </tr>
+                    </table>
+                    
+                    <p style="margin: 0; font-size: 13px; color: #64748b; line-height: 1.5; text-align: center;">Please show this ticket token or your account pass at the cinema entrance counter.</p>
+                </td>
+            </tr>
+            <tr>
+                <td style="background-color: #060d10; padding: 20px; text-align: center; border-top: 1px solid #1e293b;">
+                    <p style="margin: 0; font-size: 11px; color: #64748b;">&copy; ' . date('Y') . ' Noorjahan Movie Theater. All rights reserved.</p>
+                </td>
+            </tr>
+        </table>
+    </div>';
+
+    $headers = array( 'Content-Type: text/html; charset=UTF-8' );
+
+    wp_mail( $to, $subject, $message, $headers );
+}
+
+// =============================================================================
 // REGISTER REST API ENDPOINTS FOR SSLCOMMERZ CALLBACKS
 // =============================================================================
 add_action( 'rest_api_init', function () {
@@ -536,6 +630,9 @@ function bsc_handle_sslcommerz_success( WP_REST_Request $request ) {
             array( '%s' ),
             array( '%s' )
         );
+
+        // Trigger confirmation email
+        bsc_send_order_confirmation_email( $booking_token );
 
         $booking = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_bookings} WHERE booking_token = %s", $booking_token ) );
         if ( $booking ) {
