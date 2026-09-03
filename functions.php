@@ -307,10 +307,10 @@ if ( ! function_exists( 'bsc_generate_cinema_ticket_id' ) ) {
 }
 
 // =============================================================================
-// PROCESS FRONTEND CHECKOUT WITH CUSTOM FORMATTED TICKET ID
+// PROCESS FRONTEND CHECKOUT WITH SSLCOMMERZ GATEWAY INTEGRATION
 // =============================================================================
-add_action( 'admin_post_bsc_process_frontend_checkout', 'bsc_handle_frontend_checkout_submission' );
-function bsc_handle_frontend_checkout_submission() {
+add_action( 'admin_post_bsc_process_frontend_checkout', 'bsc_handle_sslcommerz_direct_checkout' );
+function bsc_handle_sslcommerz_direct_checkout() {
     if ( ! is_user_logged_in() ) {
         wp_safe_redirect( home_url( '/custom-login/' ) );
         exit;
@@ -320,7 +320,6 @@ function bsc_handle_frontend_checkout_submission() {
 
     global $wpdb;
     $table_bookings = $wpdb->prefix . 'bsc_bookings';
-    $table_ledger   = $wpdb->prefix . 'bsc_ledger';
 
     $movie_title    = sanitize_text_field( wp_unslash( $_POST['movie_title'] ?? '' ) );
     $auditorium     = sanitize_text_field( wp_unslash( $_POST['auditorium'] ?? 'Auditorium 1 (23 Seats)' ) );
@@ -331,45 +330,133 @@ function bsc_handle_frontend_checkout_submission() {
     $customer_name  = sanitize_text_field( wp_unslash( $_POST['customer_name'] ?? 'Guest' ) );
     $customer_phone = sanitize_text_field( wp_unslash( $_POST['customer_phone'] ?? '' ) );
     $customer_email = sanitize_email( wp_unslash( $_POST['customer_email'] ?? '' ) );
-    $payment_method = sanitize_text_field( wp_unslash( $_POST['payment_method'] ?? 'Online Portal' ) );
 
+    $tran_id       = 'BSC-' . strtoupper( wp_generate_password( 8, false ) );
     $booking_token = bsc_generate_cinema_ticket_id( 'BCS' );
 
-    $booking_data = array(
-        'booking_token'  => $booking_token,
-        'movie_title'    => $movie_title,
-        'auditorium'     => $auditorium,
-        'showtime'       => $showtime,
-        'ticket_type'    => 'Standard',
-        'seats'          => $seats,
-        'customer_name'  => $customer_name,
-        'customer_phone' => $customer_phone,
-        'customer_email' => $customer_email,
-        'total_amount'   => $total_amount,
-        'payment_method' => $payment_method,
-        'payment_status' => 'Confirmed',
-        'booking_date'   => $booking_date . ' ' . current_time( 'H:i:s' ),
+    // SSLCommerz Credentials
+   $store_id     = 'testmoviex6wn';
+    $store_passwd = 'mm1sUTJAZTj1';
+    $api_url      = 'https://sandbox.sslcommerz.com/gwprocess/v4/api.php';
+
+    $post_data = array(
+        'store_id'         => $store_id,
+        'store_passwd'     => $store_passwd,
+        'total_amount'     => $total_amount,
+        'currency'         => 'BDT',
+        'tran_id'          => $tran_id,
+        'success_url'      => home_url( '/wp-json/bsc/v1/payment-success' ) . '?token=' . urlencode( $booking_token ) . '&tran=' . $tran_id,
+        'fail_url'         => home_url( '/wp-json/bsc/v1/payment-fail' ) . '?tran=' . $tran_id,
+        'cancel_url'       => home_url( '/wp-json/bsc/v1/payment-cancel' ) . '?tran=' . $tran_id,
+        'ipn_url'          => home_url( '/wp-json/bsc/v1/payment-ipn' ),
+        'product_name'     => 'Movie Ticket: ' . $movie_title,
+        'product_category' => 'Entertainment',
+        'product_profile'  => 'non-physical-goods',
+        'cus_name'         => $customer_name,
+        'cus_email'        => $customer_email,
+        'cus_add1'         => 'Noorjahan Cinema Complex',
+        'cus_city'         => 'Sylhet',
+        'cus_postcode'     => '3100',
+        'cus_country'      => 'Bangladesh',
+        'cus_phone'        => $customer_phone,
     );
 
-    $booking_formats = array(
-        '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%s', '%s', '%s'
+    // Save initial Pending booking entry
+    $wpdb->insert(
+        $table_bookings,
+        array(
+            'booking_token'  => $booking_token,
+            'movie_title'    => $movie_title,
+            'auditorium'     => $auditorium,
+            'showtime'       => $showtime,
+            'ticket_type'    => 'Standard',
+            'seats'          => $seats,
+            'customer_name'  => $customer_name,
+            'customer_phone' => $customer_phone,
+            'customer_email' => $customer_email,
+            'total_amount'   => $total_amount,
+            'payment_method' => 'SSLCommerz',
+            'payment_status' => 'Pending',
+            'booking_date'   => $booking_date . ' ' . current_time( 'H:i:s' ),
+        ),
+        array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%s', '%s', '%s' )
     );
 
-    $inserted = $wpdb->insert( $table_bookings, $booking_data, $booking_formats );
+    $response = wp_remote_post( $api_url, array(
+        'body'      => $post_data,
+        'timeout'   => 30,
+        'sslverify' => false,
+    ) );
 
-    if ( false !== $inserted ) {
-        $wpdb->insert(
-            $table_ledger,
-            array(
-                'reference_no'     => $booking_token,
-                'txn_type'         => 'Income',
-                'particulars'      => 'Online Ticket: ' . $movie_title . ' (' . $seats . ')',
-                'method'           => $payment_method,
-                'amount'           => $total_amount,
-                'transaction_date' => current_time( 'mysql' ),
-            ),
-            array( '%s', '%s', '%s', '%s', '%f', '%s' )
+    if ( is_wp_error( $response ) ) {
+        wp_die( '<h3>Connection Error</h3><p>' . esc_html( $response->get_error_message() ) . '</p>', 'Gateway Failure', array( 'back_link' => true ) );
+    }
+
+    $result = json_decode( wp_remote_retrieve_body( $response ), true );
+
+    if ( isset( $result['status'] ) && 'SUCCESS' === $result['status'] && ! empty( $result['GatewayPageURL'] ) ) {
+        wp_redirect( $result['GatewayPageURL'] );
+        exit;
+    } else {
+        $error_reason = $result['failedreason'] ?? 'Unknown gateway initialization error.';
+        wp_die( '<h3>Gateway Initialization Failed</h3><p>' . esc_html( $error_reason ) . '</p>', 'Payment Error', array( 'back_link' => true ) );
+    }
+}
+
+// =============================================================================
+// REGISTER REST API ENDPOINTS FOR SSLCOMMERZ CALLBACKS
+// =============================================================================
+add_action( 'rest_api_init', function () {
+    register_rest_route( 'bsc/v1', '/payment-success', array(
+        'methods'             => array( 'GET', 'POST' ),
+        'callback'            => 'bsc_handle_sslcommerz_success',
+        'permission_callback' => '__return_true',
+    ) );
+
+    register_rest_route( 'bsc/v1', '/payment-fail', array(
+        'methods'             => array( 'GET', 'POST' ),
+        'callback'            => 'bsc_handle_sslcommerz_fail',
+        'permission_callback' => '__return_true',
+    ) );
+
+    register_rest_route( 'bsc/v1', '/payment-cancel', array(
+        'methods'             => array( 'GET', 'POST' ),
+        'callback'            => 'bsc_handle_sslcommerz_cancel',
+        'permission_callback' => '__return_true',
+    ) );
+} );
+
+function bsc_handle_sslcommerz_success( WP_REST_Request $request ) {
+    global $wpdb;
+    $table_bookings = $wpdb->prefix . 'bsc_bookings';
+    $table_ledger   = $wpdb->prefix . 'bsc_ledger';
+
+    $booking_token = sanitize_text_field( $request->get_param( 'token' ) );
+
+    if ( ! empty( $booking_token ) ) {
+        $wpdb->update(
+            $table_bookings,
+            array( 'payment_status' => 'Confirmed' ),
+            array( 'booking_token' => $booking_token ),
+            array( '%s' ),
+            array( '%s' )
         );
+
+        $booking = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_bookings} WHERE booking_token = %s", $booking_token ) );
+        if ( $booking ) {
+            $wpdb->insert(
+                $table_ledger,
+                array(
+                    'reference_no'     => $booking_token,
+                    'txn_type'         => 'Income',
+                    'particulars'      => 'SSLCommerz Ticket: ' . $booking->movie_title . ' (' . $booking->seats . ')',
+                    'method'           => 'SSLCommerz',
+                    'amount'           => $booking->total_amount,
+                    'transaction_date' => current_time( 'mysql' ),
+                ),
+                array( '%s', '%s', '%s', '%s', '%f', '%s' )
+            );
+        }
 
         $thank_you_url = add_query_arg(
             array(
@@ -381,13 +468,20 @@ function bsc_handle_frontend_checkout_submission() {
 
         wp_safe_redirect( $thank_you_url );
         exit;
-    } else {
-        wp_die(
-            '<h3>Booking Error</h3><p>' . esc_html( $wpdb->last_error ) . '</p>',
-            'Reservation Failed',
-            array( 'back_link' => true )
-        );
     }
+
+    wp_safe_redirect( home_url( '/account/' ) );
+    exit;
+}
+
+function bsc_handle_sslcommerz_fail( WP_REST_Request $request ) {
+    wp_safe_redirect( add_query_arg( 'payment', 'failed', home_url( '/checkout/' ) ) );
+    exit;
+}
+
+function bsc_handle_sslcommerz_cancel( WP_REST_Request $request ) {
+    wp_safe_redirect( add_query_arg( 'payment', 'cancelled', home_url( '/checkout/' ) ) );
+    exit;
 }
 
 // =============================================================================
