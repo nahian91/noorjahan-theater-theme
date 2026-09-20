@@ -34,7 +34,7 @@ get_header(); ?>
           </div>
           <div class="ifs-cinema-info-content">
             <h4><?php esc_html_e( 'Theatre Location', 'noorjahan-movie-theater' ); ?></h4>
-            <p><?php esc_html_e( 'Noorjahan Grand, VIP Road, Sylhet, Bangladesh', 'noorjahan-movie-theater' ); ?></p>
+            <p><?php esc_html_e( 'Waves 1 Dargah Gate, Sylhet 3100', 'noorjahan-movie-theater' ); ?></p>
             <p style="font-size:0.8rem; color:var(--ifs-cinema-text-muted); margin-top:4px;"><?php esc_html_e( 'Complimentary Valet Parking Available', 'noorjahan-movie-theater' ); ?></p>
           </div>
         </div>
@@ -47,8 +47,7 @@ get_header(); ?>
           </div>
           <div class="ifs-cinema-info-content">
             <h4><?php esc_html_e( 'Telephone Concierge', 'noorjahan-movie-theater' ); ?></h4>
-            <p><?php esc_html_e( 'Direct:', 'noorjahan-movie-theater' ); ?> <a href="tel:+8801700244723"><?php esc_html_e( '+880 1700-BIGSCREEN (244723)', 'noorjahan-movie-theater' ); ?></a></p>
-            <p><?php esc_html_e( 'Hotel Desk: +880 1711-000000 (Ext. 402)', 'noorjahan-movie-theater' ); ?></p>
+            <p><?php esc_html_e( 'Phone:', 'noorjahan-movie-theater' ); ?> <a href="tel:+8801930111666"><?php esc_html_e( '+880 1930-111666', 'noorjahan-movie-theater' ); ?></a></p>
           </div>
         </div>
 
@@ -60,8 +59,7 @@ get_header(); ?>
           </div>
           <div class="ifs-cinema-info-content">
             <h4><?php esc_html_e( 'Email Support', 'noorjahan-movie-theater' ); ?></h4>
-            <p><?php esc_html_e( 'General:', 'noorjahan-movie-theater' ); ?> <a href="mailto:concierge@bigscreencinemas.com">concierge@bigscreencinemas.com</a></p>
-            <p><?php esc_html_e( 'Corporate:', 'noorjahan-movie-theater' ); ?> <a href="mailto:events@bigscreencinemas.com">events@bigscreencinemas.com</a></p>
+            <p><?php esc_html_e( 'Email:', 'noorjahan-movie-theater' ); ?> <a href="mailto:cinema@noorjahangrand.com">cinema@noorjahangrand.com</a></p>
           </div>
         </div>
 

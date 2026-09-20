@@ -96,14 +96,14 @@ $slot_booked_counts    = array();
 
 if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_bookings}'" ) === $table_bookings ) {
     $all_movie_bookings = $wpdb->get_results( $wpdb->prepare(
-        "SELECT booking_date, showtime, seats FROM {$table_bookings} WHERE movie_title = %s",
+        "SELECT booking_date, showtime, seats FROM {$table_bookings} WHERE movie_title = %s AND payment_status != 'Cancelled'",
         $title
     ) );
     if ( ! empty( $all_movie_bookings ) ) {
         foreach ( $all_movie_bookings as $b_row ) {
-            $b_date  = date( 'Y-m-d', strtotime( $b_row->booking_date ) );
-            $b_time  = trim( $b_row->showtime );
-            $b_seats = explode( ',', $b_row->seats );
+            $b_date   = date( 'Y-m-d', strtotime( $b_row->booking_date ) );
+            $b_time   = trim( $b_row->showtime );
+            $b_seats  = explode( ',', $b_row->seats );
             $slot_key = $b_date . '_' . $b_time;
 
             if ( ! isset( $slot_booked_seats_map[ $slot_key ] ) ) {
@@ -111,7 +111,7 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_bookings}'" ) === $table_booking
             }
 
             foreach ( $b_seats as $st ) {
-                $trimmed_st = trim( $st );
+                $trimmed_st = strtoupper( trim( $st ) );
                 if ( ! empty( $trimmed_st ) ) {
                     $slot_booked_seats_map[ $slot_key ][] = $trimmed_st;
                 }
@@ -127,14 +127,16 @@ if ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_bookings}'" ) === $table_booking
     }
 }
 
-// Find default active future slot (ignoring past dates or past time slots on current day)
+// Total capacity is 30 seats (6 rows F-A x 5 seats)
+$total_capacity = 30;
+
+// Find default active future slot
 $initial_selected_date = '';
 $initial_selected_time = '';
 
 foreach ( $day_schedules as $day_slot ) {
     $d_val = $day_slot['date'];
     
-    // Skip entirely past days
     if ( $d_val < $today_str ) {
         continue;
     }
@@ -146,7 +148,7 @@ foreach ( $day_schedules as $day_slot ) {
         $booked_ct = $slot_booked_counts[ $slot_key ] ?? 0;
         
         $is_passed = ( $d_val === $today_str && $slot_ts < $current_timestamp );
-        $is_full   = ( $booked_ct >= 23 );
+        $is_full   = ( $booked_ct >= $total_capacity );
 
         if ( ! $is_passed && ! $is_full ) {
             $initial_selected_date = $d_val;
@@ -156,13 +158,11 @@ foreach ( $day_schedules as $day_slot ) {
     }
 }
 
-// Fallback to first available future or current slot if none matched strictly
 if ( empty( $initial_selected_date ) ) {
     $initial_selected_date = $day_schedules[0]['date'] ?? $today_str;
     $initial_selected_time = $day_schedules[0]['times'][0] ?? '18:00';
 }
 
-// Initial occupied seats for first active slot
 $initial_slot_key       = $initial_selected_date . '_' . $initial_selected_time;
 $initial_occupied_seats = $slot_booked_seats_map[ $initial_slot_key ] ?? array();
 
@@ -179,17 +179,14 @@ if ( empty( $cast_list ) ) {
 }
 
 // Retrieve Direct Ticket Prices from Settings Options
-$standard_price = floatval( get_option( 'bsc_standard_price', 400.00 ) );
-$vip_price      = floatval( get_option( 'bsc_vip_price', 500.00 ) );
-$lowest_price   = min( $standard_price, $vip_price );
-
+$standard_price  = floatval( get_option( 'bsc_standard_price', 400.00 ) );
+$vip_price       = floatval( get_option( 'bsc_vip_price', 500.00 ) );
 $service_tax_pct = floatval( get_option( 'bsc_service_charge_pct', 5.00 ) );
 $enable_tax      = get_option( 'bsc_enable_tax', 'yes' );
 $currency_symbol = get_option( 'bsc_currency_symbol', '৳' );
 $checkout_url    = home_url( '/checkout/' );
 $login_page_url  = home_url( '/account/' );
 
-// Current Page URL redirection support for login gate
 global $wp;
 $current_page_url = home_url( add_query_arg( array(), $wp->request ) );
 if ( ! empty( $_SERVER['QUERY_STRING'] ) ) {
@@ -211,10 +208,6 @@ $is_user_logged = is_user_logged_in();
     --ifs-cinema-border: #1e293b;
     --ifs-cinema-border-light: rgba(255, 255, 255, 0.1);
     --ifs-cinema-border-subtle: rgba(255, 255, 255, 0.06);
-    --ifs-cinema-seat-standard: #0d9488;
-    --ifs-cinema-seat-vip: #b45309;
-    --ifs-cinema-seat-selected: #f59e0b;
-    --ifs-cinema-seat-occupied: #334155;
     --ifs-cinema-font-mono: 'Space Grotesk', monospace, system-ui;
   }
 
@@ -380,161 +373,130 @@ $is_user_logged = is_user_logged_in();
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    background: radial-gradient(circle at center top, #0e2026 0%, #060d10 80%);
+    background: #0b171c;
     border-radius: 14px;
     padding: 2rem 1.5rem 1.5rem;
     border: 1px solid rgba(255, 255, 255, 0.05);
   }
 
-  .ifs-cinema-map-layout-wrapper {
+  /* EXACT DASHBOARD SEAT CANVAS */
+  .bsc-monitor-matrix-canvas {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1.5rem;
+    gap: 16px;
+    padding: 1.5rem 1rem;
     overflow-x: auto;
-    padding-bottom: 1.5rem;
   }
 
-  .ifs-cinema-boundary-line {
-    width: 2px;
-    height: 280px;
-    background: dashed rgba(255, 255, 255, 0.15);
-  }
-
-  .ifs-cinema-columns-matrix {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-  }
-
-  .ifs-cinema-seat-column {
+  .bsc-seat-matrix-col {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.65rem;
+    gap: 10px;
   }
 
-  .ifs-cinema-column-seats {
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
+  .bsc-seat-matrix-col .col-label {
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: #94a3b8;
+    user-select: none;
   }
 
-  .ifs-cinema-col-divider-label {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    padding: 0.5rem 0;
-    color: var(--ifs-cinema-text-muted);
-    font-size: 0.72rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .ifs-cinema-vip-col-label {
-    font-size: 0.7rem;
-    font-weight: 800;
-    color: var(--ifs-cinema-brand-amber);
-    margin-top: 0.4rem;
-    letter-spacing: 0.05em;
-  }
-
-  .ifs-cinema-seat-box {
-    width: 46px;
-    height: 46px;
+  /* Dashboard Seat Matrix Square / Box */
+  .bsc-matrix-seat {
+    position: relative;
+    width: 44px;
+    height: 44px;
     border-radius: 8px;
-    border: 2px solid transparent;
-    font-weight: 800;
-    font-size: 0.85rem;
-    font-family: var(--ifs-cinema-font-mono);
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 800;
+    font-family: var(--ifs-cinema-font-mono);
     cursor: pointer;
-    transition: all 0.2s ease;
+    box-sizing: border-box;
     user-select: none;
-    outline: none;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
-  .ifs-cinema-seat-box.vip {
-    background: #451a03;
-    border-color: #b45309;
-    color: #fde68a;
-  }
-
-  .ifs-cinema-seat-box.standard {
-    background: #0f2e28;
-    border-color: #0d9488;
+  /* Standard Available */
+  .bsc-matrix-seat.standard {
+    background: #09231f;
+    border: 1.5px solid #0d9488;
     color: #99f6e4;
   }
 
-  .ifs-cinema-seat-box:hover:not(:disabled) {
+  .bsc-matrix-seat.standard:hover {
     transform: scale(1.08);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    border-color: #2dd4bf;
+    box-shadow: 0 0 10px rgba(13, 148, 136, 0.4);
   }
 
-  .ifs-cinema-seat-box.selected {
-    background: var(--ifs-cinema-brand-amber) !important;
-    border-color: #fde68a !important;
-    color: #000 !important;
-    box-shadow: 0 0 14px rgba(245, 158, 11, 0.7);
-    transform: scale(1.1);
+  /* Selected Seat */
+  .bsc-matrix-seat.selected {
+    background: #0284c7 !important;
+    border: 2px solid #38bdf8 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.6);
+    transform: scale(1.08);
   }
 
-  .ifs-cinema-seat-box:disabled, .ifs-cinema-seat-box.occupied {
-    background: var(--ifs-cinema-seat-occupied) !important;
-    border-color: #475569 !important;
-    color: #64748b !important;
-    cursor: not-allowed;
-    opacity: 0.35;
+  /* Occupied Seat */
+  .bsc-matrix-seat.occupied {
+    background: #201317 !important;
+    border: 1.5px solid #ef4444 !important;
+    color: #fca5a5 !important;
+    cursor: not-allowed !important;
+    opacity: 0.65;
+    pointer-events: none !important;
     transform: none !important;
     box-shadow: none !important;
   }
 
-  .ifs-cinema-screen-target-indicator {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .ifs-cinema-screen-pointer {
+  /* Screen Beacon Right */
+  .bsc-matrix-screen-beacon {
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: var(--ifs-cinema-brand-teal);
+    justify-content: center;
+    margin-left: 10px;
+    padding-left: 12px;
+    border-left: 2px dashed rgba(255, 255, 255, 0.15);
+    color: #64748b;
     font-weight: 900;
-    letter-spacing: 0.1em;
+    font-size: 0.82rem;
+    letter-spacing: 0.2em;
+    user-select: none;
   }
 
-  .ifs-cinema-screen-pointer .title {
-    writing-mode: vertical-rl;
-    text-orientation: upright;
-    font-size: 0.85rem;
-    margin-bottom: 0.5rem;
+  .bsc-matrix-screen-beacon span {
+    margin-bottom: 2px;
   }
 
-  /* Columnar Legend */
-  .ifs-cinema-legend {
+  /* Dashboard Legend Row */
+  .bsc-matrix-legend-row {
     display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
     padding-top: 1.25rem;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     font-size: 0.82rem;
     color: var(--ifs-cinema-text-secondary);
   }
 
-  .ifs-cinema-legend-item {
-    display: flex;
+  .bsc-legend-pill {
+    display: inline-flex;
     align-items: center;
-    gap: 0.65rem;
+    gap: 0.5rem;
+    font-weight: 700;
   }
 
-  .ifs-cinema-legend-bullet {
-    width: 14px;
-    height: 14px;
+  .bsc-legend-pill .dot {
+    width: 13px;
+    height: 13px;
     border-radius: 4px;
     flex-shrink: 0;
   }
@@ -571,12 +533,13 @@ $is_user_logged = is_user_logged_in();
   }
 
   .ifs-cinema-seat-chip {
-    background: var(--ifs-cinema-brand-teal);
+    background: #0284c7;
     color: #fff;
     font-size: 0.75rem;
     font-weight: 800;
-    padding: 0.2rem 0.5rem;
+    padding: 0.25rem 0.55rem;
     border-radius: 4px;
+    border: 1px solid #38bdf8;
     font-family: var(--ifs-cinema-font-mono);
   }
 
@@ -628,7 +591,6 @@ $is_user_logged = is_user_logged_in();
     background: rgba(255, 255, 255, 0.02);
   }
 
-  /* Disabled Slot Styling */
   .ifs-slot-btn-disabled {
     background: rgba(255, 255, 255, 0.03) !important;
     border: 1px solid rgba(255, 255, 255, 0.05) !important;
@@ -637,7 +599,6 @@ $is_user_logged = is_user_logged_in();
     opacity: 0.45;
   }
 
-  /* Content Cards Section */
   .ifs-cinema-details-layout {
     display: grid;
     grid-template-columns: 1fr;
@@ -760,7 +721,7 @@ $is_user_logged = is_user_logged_in();
 
         <div style="display:flex; gap:1.25rem; align-items:center;">
           <button type="button" class="ifs-cinema-btn ifs-cinema-btn-amber" onclick="document.getElementById('seatSelectorSection').scrollIntoView({behavior:'smooth'})">
-            <?php echo sprintf( esc_html__( 'Choose Seats Below (From %s %s)', 'noorjahan-movie-theater' ), esc_html( $currency_symbol ), number_format( $lowest_price, 0 ) ); ?>
+            <?php echo sprintf( esc_html__( 'Choose Seats Below (%s %s)', 'noorjahan-movie-theater' ), esc_html( $currency_symbol ), number_format( $standard_price, 0 ) ); ?>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
               <path d="M13 5v11.86l5.43-5.43 1.42 1.42L12 21.14l-7.85-8.29 1.42-1.42L11 16.86V5h2z"/>
             </svg>
@@ -779,7 +740,7 @@ $is_user_logged = is_user_logged_in();
     </div>
   </section>
 
-  <!-- 02. EXACT CINEMA HALL SEAT MAP -->
+  <!-- 02. EXACT CINEMA HALL SEAT MAP (Dashboard Design: 6 Rows x 5 Seats) -->
   <section class="ifs-cinema-container ifs-cinema-inline-seat-section" id="seatSelectorSection" style="padding-top: 3.5rem;">
     
     <div style="margin-bottom: 2rem; text-align: center;">
@@ -792,143 +753,49 @@ $is_user_logged = is_user_logged_in();
       <!-- Seating Canvas Area -->
       <div class="ifs-cinema-seating-arena">
         
-        <div class="ifs-cinema-map-layout-wrapper">
-          <!-- Left VIP Boundary Bar -->
-          <div class="ifs-cinema-boundary-line left"></div>
+        <div class="bsc-monitor-matrix-canvas" id="publicSeatMatrixBoard">
+          <?php 
+          $matrix_rows = array( 'F', 'E', 'D', 'C', 'B', 'A' );
 
-          <!-- 4 Vertical Column Seating Matrix -->
-          <div class="ifs-cinema-columns-matrix" id="seatingColumnsGrid" role="grid" aria-label="<?php esc_attr_e( 'Vertical Columns Seat Map', 'noorjahan-movie-theater' ); ?>">
-            
-            <!-- Column 1: Row A (VIP Recliner Column) -->
-            <div class="ifs-cinema-seat-column vip-col">
-              <div class="ifs-cinema-column-seats">
-                <?php foreach ( array('A1', 'A2', 'A3', 'A4', 'A5') as $seat_id ) : 
-                  $is_taken = in_array( $seat_id, $initial_occupied_seats );
-                ?>
-                  <button type="button" 
-                          class="ifs-cinema-seat-box vip <?php echo $is_taken ? 'occupied' : ''; ?>" 
-                          id="seat-<?php echo esc_attr( $seat_id ); ?>" 
-                          data-seat-id="<?php echo esc_attr( $seat_id ); ?>"
-                          data-seat-type="vip"
-                          <?php echo $is_taken ? 'disabled' : ''; ?>
-                          onclick="toggleSeat('<?php echo esc_attr( $seat_id ); ?>', this, 'vip')" 
-                          aria-label="Seat <?php echo esc_attr( $seat_id ); ?> VIP <?php echo $is_taken ? 'Occupied' : ''; ?>">
-                    <span class="ifs-seat-id"><?php echo esc_html( $seat_id ); ?></span>
-                  </button>
-                <?php endforeach; ?>
-              </div>
-              <div class="ifs-cinema-vip-col-label"><?php esc_html_e( 'VIP SEATING', 'noorjahan-movie-theater' ); ?></div>
+          foreach ( $matrix_rows as $row_letter ) : ?>
+            <div class="bsc-seat-matrix-col">
+              <div class="col-label"><?php echo esc_html( $row_letter ); ?></div>
+              <?php for ( $seat_num = 1; $seat_num <= 5; $seat_num++ ) : 
+                $s_id     = $row_letter . $seat_num;
+                $is_taken = in_array( $s_id, $initial_occupied_seats, true );
+              ?>
+                <div class="bsc-matrix-seat <?php echo $is_taken ? 'occupied' : 'standard'; ?>" 
+                     id="matrix-seat-<?php echo esc_attr( $s_id ); ?>" 
+                     data-seat="<?php echo esc_attr( $s_id ); ?>"
+                     title="Seat <?php echo esc_attr( $s_id . ( $is_taken ? ' [OCCUPIED]' : ' [AVAILABLE]' ) ); ?>">
+                  <?php echo esc_html( $s_id ); ?>
+                </div>
+              <?php endfor; ?>
+              <div class="col-label" style="margin-top:8px;"><?php echo esc_html( $row_letter ); ?></div>
             </div>
+          <?php endforeach; ?>
 
-            <!-- Col Label A -->
-            <div class="ifs-cinema-col-divider-label">
-              <span>Row A</span>
-              <span>Row A</span>
-            </div>
-
-            <!-- Column 2: Row B (Standard Column) -->
-            <div class="ifs-cinema-seat-column standard-col">
-              <div class="ifs-cinema-column-seats">
-                <?php foreach ( array('B1', 'B2', 'B3', 'B4', 'B5', 'B6') as $seat_id ) : 
-                  $is_taken = in_array( $seat_id, $initial_occupied_seats );
-                ?>
-                  <button type="button" 
-                          class="ifs-cinema-seat-box standard <?php echo $is_taken ? 'occupied' : ''; ?>" 
-                          id="seat-<?php echo esc_attr( $seat_id ); ?>" 
-                          data-seat-id="<?php echo esc_attr( $seat_id ); ?>"
-                          data-seat-type="standard"
-                          <?php echo $is_taken ? 'disabled' : ''; ?>
-                          onclick="toggleSeat('<?php echo esc_attr( $seat_id ); ?>', this, 'standard')" 
-                          aria-label="Seat <?php echo esc_attr( $seat_id ); ?> Standard <?php echo $is_taken ? 'Occupied' : ''; ?>">
-                    <span class="ifs-seat-id"><?php echo esc_html( $seat_id ); ?></span>
-                  </button>
-                <?php endforeach; ?>
-              </div>
-            </div>
-
-            <!-- Col Label Row B -->
-            <div class="ifs-cinema-col-divider-label">
-              <span>Row B</span>
-              <span>Row B</span>
-            </div>
-
-            <!-- Column 3: Row C (Standard Column) -->
-            <div class="ifs-cinema-seat-column standard-col">
-              <div class="ifs-cinema-column-seats">
-                <?php foreach ( array('C1', 'C2', 'C3', 'C4', 'C5', 'C6') as $seat_id ) : 
-                  $is_taken = in_array( $seat_id, $initial_occupied_seats );
-                ?>
-                  <button type="button" 
-                          class="ifs-cinema-seat-box standard <?php echo $is_taken ? 'occupied' : ''; ?>" 
-                          id="seat-<?php echo esc_attr( $seat_id ); ?>" 
-                          data-seat-id="<?php echo esc_attr( $seat_id ); ?>"
-                          data-seat-type="standard"
-                          <?php echo $is_taken ? 'disabled' : ''; ?>
-                          onclick="toggleSeat('<?php echo esc_attr( $seat_id ); ?>', this, 'standard')" 
-                          aria-label="Seat <?php echo esc_attr( $seat_id ); ?> Standard <?php echo $is_taken ? 'Occupied' : ''; ?>">
-                    <span class="ifs-seat-id"><?php echo esc_html( $seat_id ); ?></span>
-                  </button>
-                <?php endforeach; ?>
-              </div>
-            </div>
-
-            <!-- Col Label Row C & Row D -->
-            <div class="ifs-cinema-col-divider-label">
-              <span>Row C</span>
-              <span>Row C</span>
-            </div>
-
-            <!-- Column 4: Row D (Standard Column Nearest to Screen) -->
-            <div class="ifs-cinema-seat-column standard-col">
-              <div class="ifs-cinema-column-seats">
-                <?php foreach ( array('D1', 'D2', 'D3', 'D4', 'D5', 'D6') as $seat_id ) : 
-                  $is_taken = in_array( $seat_id, $initial_occupied_seats );
-                ?>
-                  <button type="button" 
-                          class="ifs-cinema-seat-box standard <?php echo $is_taken ? 'occupied' : ''; ?>" 
-                          id="seat-<?php echo esc_attr( $seat_id ); ?>" 
-                          data-seat-id="<?php echo esc_attr( $seat_id ); ?>"
-                          data-seat-type="standard"
-                          <?php echo $is_taken ? 'disabled' : ''; ?>
-                          onclick="toggleSeat('<?php echo esc_attr( $seat_id ); ?>', this, 'standard')" 
-                          aria-label="Seat <?php echo esc_attr( $seat_id ); ?> Standard <?php echo $is_taken ? 'Occupied' : ''; ?>">
-                    <span class="ifs-seat-id"><?php echo esc_html( $seat_id ); ?></span>
-                  </button>
-                <?php endforeach; ?>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Right Screen Indicator with Arrow -->
-          <div class="ifs-cinema-screen-target-indicator">
-            <div class="ifs-cinema-boundary-line right"></div>
-            <div class="ifs-cinema-screen-pointer">
-              <span class="title"><?php esc_html_e( 'SCREEN', 'noorjahan-movie-theater' ); ?></span>
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M5 12h14M13 5l7 7-7 7"/>
-              </svg>
-            </div>
+          <div class="bsc-matrix-screen-beacon">
+            <span>S</span><span>C</span><span>R</span><span>E</span><span>E</span><span>N</span>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" style="margin-top: 8px;">
+              <path d="M5 12h14M13 5l7 7-7 7"/>
+            </svg>
           </div>
         </div>
 
-        <!-- Columnar Tiered Legend -->
-        <div class="ifs-cinema-legend">
-          <div class="ifs-cinema-legend-item">
-            <div class="ifs-cinema-legend-bullet" style="background: var(--ifs-cinema-seat-standard);"></div>
-            <span>Standard Seating (<?php echo esc_html( $currency_symbol ); ?> <?php echo number_format( $standard_price, 0 ); ?>)</span>
+        <!-- Dashboard-Matched Legend -->
+        <div class="bsc-matrix-legend-row">
+          <div class="bsc-legend-pill">
+            <div class="dot" style="background: #0d9488;"></div>
+            <span><?php esc_html_e( 'Available', 'noorjahan-movie-theater' ); ?> (<?php echo esc_html( $currency_symbol . ' ' . number_format( $standard_price, 0 ) ); ?>)</span>
           </div>
-          <div class="ifs-cinema-legend-item">
-            <div class="ifs-cinema-legend-bullet" style="background: var(--ifs-cinema-seat-vip);"></div>
-            <span>VIP Motorized Recliners (<?php echo esc_html( $currency_symbol ); ?> <?php echo number_format( $vip_price, 0 ); ?>)</span>
-          </div>
-          <div class="ifs-cinema-legend-item">
-            <div class="ifs-cinema-legend-bullet" style="background: var(--ifs-cinema-seat-selected);"></div>
+          <div class="bsc-legend-pill">
+            <div class="dot" style="background: #0284c7;"></div>
             <span><?php esc_html_e( 'Selected', 'noorjahan-movie-theater' ); ?></span>
           </div>
-          <div class="ifs-cinema-legend-item">
-            <div class="ifs-cinema-legend-bullet" style="background: var(--ifs-cinema-seat-occupied); opacity: 0.35;"></div>
-            <span><?php esc_html_e( 'Occupied', 'noorjahan-movie-theater' ); ?></span>
+          <div class="bsc-legend-pill">
+            <div class="dot" style="background: #ef4444;"></div>
+            <span><?php esc_html_e( 'Booked / Reserved for Slot', 'noorjahan-movie-theater' ); ?></span>
           </div>
         </div>
       </div>
@@ -945,7 +812,7 @@ $is_user_logged = is_user_logged_in();
             <div style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--ifs-cinema-brand-amber); margin-bottom: 0.6rem; display: flex; align-items: center; justify-content: space-between;">
               <span>Active Booking Slot</span>
               <span style="display:inline-flex; align-items:center; gap:4px;">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
                 Config
               </span>
             </div>
@@ -955,7 +822,6 @@ $is_user_logged = is_user_logged_in();
               <select id="selectedScreeningDate" onchange="syncSlotDropdowns(true)" style="width: 100%; padding: 0.35rem 0.5rem; background: #070e11; border: 1px solid var(--ifs-cinema-border); border-radius: 6px; color: #5eead4; font-size: 0.82rem; font-family: var(--ifs-cinema-font-mono); outline: none;">
                 <?php foreach ( $day_schedules as $sched ) : 
                   $clean_d = trim( $sched['date'] );
-                  // Hide past dates from dropdown if desired, or let validation handle it
                   if ( $clean_d < $today_str ) {
                       continue;
                   }
@@ -972,7 +838,6 @@ $is_user_logged = is_user_logged_in();
             <div>
               <label style="display: block; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: var(--ifs-cinema-text-muted); margin-bottom: 2px;">Time</label>
               <select id="selectedScreeningTime" onchange="syncSlotDropdowns(false)" style="width: 100%; padding: 0.35rem 0.5rem; background: #070e11; border: 1px solid var(--ifs-cinema-border); border-radius: 6px; color: #5eead4; font-size: 0.82rem; font-family: var(--ifs-cinema-font-mono); outline: none;">
-                <!-- Populated dynamically via JS syncSlotDropdowns() based on selected Date -->
               </select>
             </div>
           </div>
@@ -1025,7 +890,7 @@ $is_user_logged = is_user_logged_in();
     </div>
   </section>
 
-  <!-- 03. SCREENING SCHEDULE TABLE SECTION (Hierarchical Day & Shows with Real-Time Seat Availability) -->
+  <!-- 03. SCREENING SCHEDULE TABLE SECTION (30 Seats Limit) -->
   <section class="ifs-cinema-container ifs-cinema-schedule-section">
     <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
       <div>
@@ -1051,7 +916,6 @@ $is_user_logged = is_user_logged_in();
             foreach ( $day_schedules as $day_slot ) :
               $clean_date = trim( $day_slot['date'] );
               
-              // Skip past dates in schedule table
               if ( $clean_date < $today_str ) {
                   continue;
               }
@@ -1080,18 +944,15 @@ $is_user_logged = is_user_logged_in();
                     $clean_time  = trim( $time_item );
                     $formatted_t = (strpos($clean_time, ':') !== false && strlen($clean_time) <= 5) ? date('h:i A', strtotime($clean_time)) : $clean_time;
                     
-                    // Live remaining seats calculation for this exact slot
                     $slot_key        = $clean_date . '_' . $clean_time;
                     $booked_count    = $slot_booked_counts[ $slot_key ] ?? 0;
-                    $available_seats = max( 0, 23 - $booked_count );
+                    $available_seats = max( 0, $total_capacity - $booked_count );
                     
-                    // Past timestamp check
                     $slot_timestamp  = strtotime( $clean_date . ' ' . $clean_time );
                     $is_passed       = ( $is_today && $slot_timestamp < $current_timestamp );
                     $is_sold_out     = ( $available_seats <= 0 );
                     $is_disabled     = ( $is_passed || $is_sold_out );
                     
-                    // Highlight next slot if active
                     $is_next_active  = ( $clean_date === $initial_selected_date && $clean_time === $initial_selected_time );
                   ?>
                     <button type="button" 
@@ -1186,9 +1047,9 @@ $is_user_logged = is_user_logged_in();
   <script>
     let selectedSeats = [];
 
+    const TOTAL_CAPACITY = <?php echo intval( $total_capacity ); ?>;
     const PRICES = {
-      standard: <?php echo floatval( $standard_price ); ?>,
-      vip: <?php echo floatval( $vip_price ); ?>
+      standard: <?php echo floatval( $standard_price ); ?>
     };
     const TAX_RATE = <?php echo ( $enable_tax === 'yes' ? floatval( $service_tax_pct ) / 100 : 0 ); ?>;
     const CURRENCY = <?php echo wp_json_encode( esc_html( $currency_symbol ) ); ?>;
@@ -1203,6 +1064,15 @@ $is_user_logged = is_user_logged_in();
     const SLOT_BOOKINGS = <?php echo wp_json_encode( $slot_booked_counts ); ?>;
     const INITIAL_DATE = <?php echo wp_json_encode( $initial_selected_date ); ?>;
     const INITIAL_TIME = <?php echo wp_json_encode( $initial_selected_time ); ?>;
+
+    const ALL_SEAT_IDS = [
+      'A1','A2','A3','A4','A5',
+      'B1','B2','B3','B4','B5',
+      'C1','C2','C3','C4','C5',
+      'D1','D2','D3','D4','D5',
+      'E1','E2','E3','E4','E5',
+      'F1','F2','F3','F4','F5'
+    ];
 
     function formatTime(timeStr) {
       if (!timeStr) return '06:00 PM';
@@ -1246,7 +1116,7 @@ $is_user_logged = is_user_logged_in();
         const cleanT = tVal.trim();
         const slotKey = `${chosenDate}_${cleanT}`;
         const booked = SLOT_BOOKINGS[slotKey] || 0;
-        const isFull = (booked >= 23);
+        const isFull = (booked >= TOTAL_CAPACITY);
         let isPassed = false;
 
         if (isToday) {
@@ -1270,7 +1140,7 @@ $is_user_logged = is_user_logged_in();
           opt.text = `${formatted} (Sold Out)`;
         } else {
           opt.disabled = false;
-          opt.text = `${formatted} (${23 - booked} Left)`;
+          opt.text = `${formatted} (${TOTAL_CAPACITY - booked} Left)`;
         }
 
         timeSelect.appendChild(opt);
@@ -1298,50 +1168,49 @@ $is_user_logged = is_user_logged_in();
       const slotKey = `${chosenDate}_${chosenTime}`;
 
       const occupiedSeats = SLOT_BOOKED_SEATS_MAP[slotKey] || [];
-      const allSeatButtons = document.querySelectorAll('.ifs-cinema-seat-box');
+      const allSeatElements = document.querySelectorAll('.bsc-matrix-seat');
 
-      allSeatButtons.forEach(btn => {
-        const seatId = btn.getAttribute('data-seat-id') || btn.id.replace('seat-', '');
+      allSeatElements.forEach(seatEl => {
+        const seatId = seatEl.getAttribute('data-seat');
         const isTaken = occupiedSeats.includes(seatId);
 
         if (isTaken) {
-          btn.disabled = true;
-          btn.classList.add('occupied');
-          btn.classList.remove('selected');
-          btn.setAttribute('aria-label', `Seat ${seatId} Occupied`);
+          seatEl.className = 'bsc-matrix-seat occupied';
+          seatEl.title = `Seat ${seatId} [OCCUPIED FOR SLOT]`;
           
           const sIdx = selectedSeats.findIndex(s => s.id === seatId);
           if (sIdx > -1) {
             selectedSeats.splice(sIdx, 1);
           }
         } else {
-          btn.disabled = false;
-          btn.classList.remove('occupied');
           const isSelected = selectedSeats.some(s => s.id === seatId);
           if (isSelected) {
-            btn.classList.add('selected');
+            seatEl.className = 'bsc-matrix-seat selected';
+            seatEl.title = `Seat ${seatId} [SELECTED]`;
           } else {
-            btn.classList.remove('selected');
+            seatEl.className = 'bsc-matrix-seat standard';
+            seatEl.title = `Seat ${seatId} [AVAILABLE]`;
           }
-          btn.setAttribute('aria-label', `Seat ${seatId}`);
         }
       });
 
       updatePricing();
     }
 
-    function toggleSeat(seatId, el, type) {
-      if (el.disabled || el.classList.contains('occupied')) return;
+    function toggleSeat(seatId, seatEl) {
+      if (seatEl.classList.contains('occupied')) return;
 
-      const price = PRICES[type];
+      const price = PRICES.standard;
       const index = selectedSeats.findIndex(s => s.id === seatId);
 
       if (index > -1) {
         selectedSeats.splice(index, 1);
-        el.classList.remove('selected');
+        seatEl.className = 'bsc-matrix-seat standard';
+        seatEl.title = `Seat ${seatId} [AVAILABLE]`;
       } else {
-        selectedSeats.push({ id: seatId, type: type, price: price });
-        el.classList.add('selected');
+        selectedSeats.push({ id: seatId, price: price });
+        seatEl.className = 'bsc-matrix-seat selected';
+        seatEl.title = `Seat ${seatId} [SELECTED]`;
       }
 
       updatePricing();
@@ -1416,6 +1285,16 @@ $is_user_logged = is_user_logged_in();
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+      const matrixBoard = document.getElementById('publicSeatMatrixBoard');
+      if (matrixBoard) {
+        matrixBoard.addEventListener('click', function(e) {
+          const seatEl = e.target.closest('.bsc-matrix-seat');
+          if (!seatEl) return;
+          const seatId = seatEl.getAttribute('data-seat');
+          toggleSeat(seatId, seatEl);
+        });
+      }
+
       syncSlotDropdowns(false, INITIAL_TIME);
     });
   </script>

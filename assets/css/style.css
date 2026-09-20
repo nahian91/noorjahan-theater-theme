@@ -3178,3 +3178,18 @@ img { max-width: 100%; height: auto; display: block; }
     color: #000 !important;
   }
 }
+.ifs-cinema-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 10px 30px;
+	border-radius: 8px;
+	font-weight: 600;
+	font-size: 16px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	border: none;
+	text-decoration: none;
+	text-transform: capitalize;
+}

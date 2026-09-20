@@ -13,7 +13,7 @@ $pricing_tiers   = get_option( 'bsc_pricing_tiers', array(
     array( 'title' => 'Standard Seating', 'amount' => '400' ),
     array( 'title' => 'VIP Motorized Recliner', 'amount' => '500' )
 ) );
-$min_price = 500.00;
+$min_price = 400.00;
 if (!empty($pricing_tiers)) {
     $amounts = array_column($pricing_tiers, 'amount');
     $min_price = min(array_map('floatval', $amounts));
@@ -61,6 +61,7 @@ $table_bookings = $wpdb->prefix . 'bsc_bookings';
 
 $current_timestamp = current_time( 'timestamp' );
 $today_str         = date( 'Y-m-d', $current_timestamp );
+$total_seats_capacity = 30; // Synchronized 30-seat matrix capacity
 
 // Safely fetch only 'Now Showing' movies if the table exists
 $latest_movies = array();
@@ -89,7 +90,7 @@ $details_page_url = home_url( '/movie-details/' );
             <span class="ifs-cinema-pulse-dot"></span>
             <span><?php echo esc_html(sprintf(__('Now Open • %s', 'noorjahan-movie-theater'), $theater_name)); ?></span>
           </div>
-          <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'BOUTIQUE 23-SEAT AUDITORIUMS', 'noorjahan-movie-theater' ); ?></span>
+          <span class="ifs-cinema-badge ifs-cinema-badge-amber"><?php esc_html_e( 'BOUTIQUE 30-SEAT AUDITORIUMS', 'noorjahan-movie-theater' ); ?></span>
         </div>
 
         <h1 class="ifs-cinema-hero-title"><?php esc_html_e( 'EXPERIENCE CINEMA IN ABSOLUTE LUXURY', 'noorjahan-movie-theater' ); ?></h1>
@@ -189,8 +190,9 @@ $details_page_url = home_url( '/movie-details/' );
             // Parse official theatrical release date string
             $release_date_str = '';
             if ( ! empty( $movie->release_date ) ) {
-                $decoded_rd = json_decode( $movie->release_date, true );
-                $raw_rd = ( is_array( $decoded_rd ) && ! empty( $decoded_rd[0] ) ) ? $decoded_rd[0] : $movie->release_date;
+                $raw_rd_str = wp_unslash( (string) $movie->release_date );
+                $decoded_rd = json_decode( $raw_rd_str, true );
+                $raw_rd = ( is_array( $decoded_rd ) && ! empty( $decoded_rd[0] ) ) ? $decoded_rd[0] : $raw_rd_str;
                 $ts_rd  = strtotime( $raw_rd );
                 $release_date_str = $ts_rd ? date_i18n( 'F j, Y', $ts_rd ) : $raw_rd;
             }
@@ -204,25 +206,40 @@ $details_page_url = home_url( '/movie-details/' );
             // Parse today's showtime slots from hierarchical schedules
             $today_showtimes = array();
             if ( ! empty( $movie->showtimes ) ) {
-              $decoded_sched = json_decode( $movie->showtimes, true );
+              $raw_sched = wp_unslash( (string) $movie->showtimes );
+              $decoded_sched = json_decode( $raw_sched, true );
+              if ( ! is_array( $decoded_sched ) ) {
+                $decoded_sched = json_decode( stripslashes( $raw_sched ), true );
+              }
+
               if ( is_array( $decoded_sched ) && ! empty( $decoded_sched ) ) {
-                if ( isset( $decoded_sched[0]['date'] ) && isset( $decoded_sched[0]['times'] ) ) {
+                if ( isset( $decoded_sched[0]['date'] ) && ( isset( $decoded_sched[0]['times'] ) || isset( $decoded_sched[0]['time'] ) ) ) {
                   $found_today = false;
                   foreach ( $decoded_sched as $day_slot ) {
-                    if ( $day_slot['date'] === $today_str && ! empty( $day_slot['times'] ) ) {
-                      $today_showtimes = (array) $day_slot['times'];
+                    $slot_date = isset( $day_slot['date'] ) ? date( 'Y-m-d', strtotime( $day_slot['date'] ) ) : '';
+                    if ( $slot_date === $today_str ) {
+                      if ( ! empty( $day_slot['times'] ) ) {
+                        $today_showtimes = (array) $day_slot['times'];
+                      } elseif ( ! empty( $day_slot['time'] ) ) {
+                        $today_showtimes = array( $day_slot['time'] );
+                      }
                       $found_today = true;
                       break;
                     }
                   }
-                  if ( ! $found_today && ! empty( $decoded_sched[0]['times'] ) ) {
-                    $today_showtimes = (array) $decoded_sched[0]['times'];
+                  if ( ! $found_today ) {
+                    $first_entry = $decoded_sched[0];
+                    if ( ! empty( $first_entry['times'] ) ) {
+                      $today_showtimes = (array) $first_entry['times'];
+                    } elseif ( ! empty( $first_entry['time'] ) ) {
+                      $today_showtimes = array( $first_entry['time'] );
+                    }
                   }
                 } else {
                   $today_showtimes = $decoded_sched;
                 }
               } else {
-                $today_showtimes = array_map( 'trim', explode( ',', $movie->showtimes ) );
+                $today_showtimes = array_map( 'trim', explode( ',', $raw_sched ) );
               }
             }
             if ( empty( $today_showtimes ) ) { $today_showtimes = array( '18:00' ); }
@@ -239,25 +256,21 @@ $details_page_url = home_url( '/movie-details/' );
             }
             $formatted_next_show = (strpos($next_showtime_val, ':') !== false && strlen($next_showtime_val) <= 5) ? date('h:i A', strtotime($next_showtime_val)) : $next_showtime_val;
 
-            // Calculate remaining seats out of 23 for this movie on the active showtime
-            $total_seats_capacity = 23;
-            $booked_seats_count   = 0;
+            // Calculate remaining seats out of 30 for this movie on the active showtime
+            $booked_seats_count = 0;
             if ($wpdb->get_var("SHOW TABLES LIKE '{$table_bookings}'") === $table_bookings) {
                 $movie_bookings = $wpdb->get_col( $wpdb->prepare( 
-                    "SELECT seats FROM {$table_bookings} WHERE movie_title = %s AND (DATE(booking_date) = %s OR booking_date LIKE %s) AND showtime = %s", 
+                    "SELECT seats FROM {$table_bookings} WHERE movie_title = %s AND (DATE(booking_date) = %s OR booking_date LIKE %s) AND (showtime = %s OR showtime = %s) AND payment_status != 'Cancelled'", 
                     $movie->title, 
-                    $today_str,
-                    $today_str . '%',
-                    $next_showtime_val
+                    $today_str, 
+                    $today_str . '%', 
+                    $next_showtime_val,
+                    $formatted_next_show
                 ) );
                 
-                if ( empty( $movie_bookings ) ) {
-                  $movie_bookings = $wpdb->get_col( $wpdb->prepare( "SELECT seats FROM {$table_bookings} WHERE movie_title = %s", $movie->title ) );
-                }
-
                 if (!empty($movie_bookings)) {
                   foreach ($movie_bookings as $b_seats) {
-                    $seat_arr = explode(',', $b_seats);
+                    $seat_arr = explode(',', (string) $b_seats);
                     foreach ($seat_arr as $s_item) {
                       if (trim($s_item) !== '') {
                         $booked_seats_count++;
@@ -401,7 +414,12 @@ $details_page_url = home_url( '/movie-details/' );
             
             $showtimes = array();
             if ( ! empty( $movie->showtimes ) ) {
-              $decoded = json_decode( $movie->showtimes, true );
+              $raw_sched = wp_unslash( (string) $movie->showtimes );
+              $decoded = json_decode( $raw_sched, true );
+              if ( ! is_array( $decoded ) ) {
+                $decoded = json_decode( stripslashes( $raw_sched ), true );
+              }
+
               if ( is_array( $decoded ) && ! empty( $decoded ) ) {
                 if ( isset( $decoded[0]['times'] ) ) {
                   foreach ( $decoded as $ds ) {
@@ -409,11 +427,15 @@ $details_page_url = home_url( '/movie-details/' );
                       $showtimes[] = $t;
                     }
                   }
+                } elseif ( isset( $decoded[0]['time'] ) ) {
+                  foreach ( $decoded as $ds ) {
+                    $showtimes[] = $ds['time'];
+                  }
                 } else {
                   $showtimes = $decoded;
                 }
               } else {
-                $showtimes = array_map( 'trim', explode( ',', $movie->showtimes ) );
+                $showtimes = array_map( 'trim', explode( ',', $raw_sched ) );
               }
             }
             if ( empty( $showtimes ) ) { $showtimes = array( '18:00' ); }
@@ -434,7 +456,7 @@ $details_page_url = home_url( '/movie-details/' );
               <div style="display:flex; align-items:center; gap:1.75rem; flex:1.5;">
                 <div style="position:relative; flex-shrink:0;">
                   <img src="<?php echo $poster; ?>" 
-                       alt="<?php echo esc_attr( $title ); ?>"
+                       alt="<?php echo esc_attr( $title ); ?>" 
                        style="width:90px; height:125px; border-radius:10px; object-fit:cover; border:1px solid rgba(255,255,255,0.15); box-shadow: 0 6px 18px rgba(0,0,0,0.4);"
                        onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&auto=format&fit=crop&q=75';">
                 </div>

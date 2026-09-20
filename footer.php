@@ -92,7 +92,7 @@
             </div>
             <div class="ifs-cinema-contact-content">
               <span class="lbl"><?php esc_html_e( 'Address', 'noorjahan-movie-theater' ); ?></span>
-              <span class="val"><?php esc_html_e( 'Noorjahan Grand, VIP Road, Sylhet', 'noorjahan-movie-theater' ); ?></span>
+              <span class="val"><?php esc_html_e( 'Waves 1 Dargah Gate, Sylhet 3100', 'noorjahan-movie-theater' ); ?></span>
             </div>
           </div>
 
@@ -103,7 +103,7 @@
             </div>
             <div class="ifs-cinema-contact-content">
               <span class="lbl"><?php esc_html_e( 'Phone', 'noorjahan-movie-theater' ); ?></span>
-              <a href="tel:+8801700244723" class="val"><?php esc_html_e( '+880 1700-BIGSCREEN (244723)', 'noorjahan-movie-theater' ); ?></a>
+              <a href="tel:+8801930111666" class="val"><?php esc_html_e( '+8801930-111666', 'noorjahan-movie-theater' ); ?></a>
             </div>
           </div>
 
@@ -114,7 +114,7 @@
             </div>
             <div class="ifs-cinema-contact-content">
               <span class="lbl"><?php esc_html_e( 'Email', 'noorjahan-movie-theater' ); ?></span>
-              <a href="mailto:concierge@bigscreencinemas.com" class="val"><?php esc_html_e( 'concierge@bigscreencinemas.com', 'noorjahan-movie-theater' ); ?></a>
+              <a href="mailto:cinema@noorjahangrand.com" class="val"><?php esc_html_e( 'cinema@noorjahangrand.com', 'noorjahan-movie-theater' ); ?></a>
             </div>
           </div>
 
